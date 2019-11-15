@@ -6,7 +6,15 @@
 .controls,
 .openLink, 
 #belowSheet,
-#bottomAuthor {
+#bottomAuthor,
+.sheetsEditNavTop,
+.inlineAddButton,
+.header,
+#addInterface,
+#fileControls,
+#footer,
+.cookiesNotification
+{
 	display: none !important;
 	border: 0;
 }
@@ -22,6 +30,14 @@
 
 #sheet.numbered {
 	margin: 0 5mm 0 10mm;
+}
+
+.sheetItem table {
+	max-width: 100%;
+}
+
+.activeSource {
+	border:0
 }
 
 #sheetHeader {
@@ -49,4 +65,8 @@ a {
 { 
     size: auto;
     margin: 18mm 15mm;
-} 
+}
+
+#footer{
+	display: none;
+}

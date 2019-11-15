@@ -3,7 +3,9 @@ import json
 from rauth import OAuth2Service
 from datetime import datetime
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.core.mail import EmailMultiAlternatives
+from functools import wraps
 
 from sefaria import local_settings as sls
 
@@ -17,6 +19,9 @@ def jsonResponse(data, callback=None, status=200):
     except AttributeError:
         pass
 
+    if data is None:
+        data = {"error": 'No data available'}
+
     if "_id" in data:
         data["_id"] = str(data["_id"])
 
@@ -25,26 +30,39 @@ def jsonResponse(data, callback=None, status=200):
             if isinstance(data[key], datetime):
                 data[key] = data[key].isoformat()
 
-    return HttpResponse(json.dumps(data), mimetype="application/json", status=status)
+    return HttpResponse(json.dumps(data), content_type="application/json", status=status)
 
 
 def jsonpResponse(data, callback, status=200):
     if "_id" in data:
         data["_id"] = str(data["_id"])
-    return HttpResponse("%s(%s)" % (callback, json.dumps(data)), mimetype="application/javascript", status=status)
+    return HttpResponse("%s(%s)" % (callback, json.dumps(data)), content_type="application/javascript", status=status)
 
 
-def subscribe_to_announce(email, first_name=None, last_name=None):
-    """
-    Subscribes an email address to the Announcement list
-    """
+def subscribe_to_list(lists, email, first_name=None, last_name=None, direct_sign_up=False, bypass_nationbuilder=False):
+
     if not sls.NATIONBUILDER:
         return
 
+    if bypass_nationbuilder:
+        name          = first_name + " " + last_name if first_name and last_name else ""
+        method        = "Signed up directly" if direct_sign_up else "Signed up during account creation"
+        message_html  = "%s<br>%s<br>%s" % (name, email, method)
+        subject       = "Mailing list signup"
+        from_email    = "Sefaria <hello@sefaria.org>"
+        to            = "amelia@sefaria.org"
+
+        msg = EmailMultiAlternatives(subject, message_html, from_email, [to])
+        msg.content_subtype = "html"  # Main content is now text/html
+        msg.send()
+
+        return True
+
+    tags = lists
     post = {
         "person": {
             "email": email,
-            "tags": ["Announcements_General"],
+            "tags": tags,
         }
     }
     if first_name:
@@ -77,3 +95,9 @@ def get_nation_builder_connection():
     session = service.get_session(token)
 
     return session
+
+def send_email(subject, message_html, from_email, to_email):
+    msg = EmailMultiAlternatives(subject, message_html, "Sefaria <hello@sefaria.org>", [to_email], reply_to=[from_email])
+    msg.send()
+
+    return True

@@ -165,13 +165,14 @@ def add_translation_requests_from_source_sheets(hours=0):
 
     sheets = db.sheets.find(query)
     for sheet in sheets:
-        for ref in sheet.get("included_refs", []):
-            if not ref:
+        for source in sheet["sources"]:
+
+            if "ref" not in source:
                 continue
             try:
-                r = text.Ref(ref)
+                r = text.Ref(source["ref"])
                 if not r.is_text_translated():
-                    TranslationRequest.make_request(ref, sheet["owner"])
+                    TranslationRequest.make_request(source["ref"], sheet["owner"])
             except InputError:
                 continue
 
@@ -186,11 +187,8 @@ def process_version_state_change_in_translation_requests(version, **kwargs):
 
 
 def process_index_delete_in_translation_requests(indx, **kwargs):
-    if indx.is_commentary():
-        pattern = ur'^{} on '.format(re.escape(indx.title))
-    else:
-        commentators = text.IndexSet({"categories.0": "Commentary"}).distinct("title")
-        pattern = ur"(^{} \d)|^({}) on {} \d".format(re.escape(indx.title), "|".join(commentators), re.escape(indx.title))
+    from sefaria.model.text import prepare_index_regex_for_dependency_process
+    pattern = prepare_index_regex_for_dependency_process(indx)
     TranslationRequestSet({"refs": {"$regex": pattern}}).delete()
 
 

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% load sefaria_tags %}
+{% load i18n %}
+
+{% block title %}{% trans "People in the Talmud" %}{% endblock %}
+
+{% block description %}{% trans "An index of the sages of the Talmud (Chazal) ordered by generation, including relationships to one another, time periods and links to learn more." %}{% endblock %}
+
+{% block css %}
+    #languageToggle {
+        display: inline;
+    }
+    #languageToggle #bilingual {
+        display: none;
+    }
+{% endblock %}
+
+{% block content %}
+
+
+<div id="talmudicPeoplePage" class="biReady container static">
+    <div class="inner">
+        <h1>
+            <span class="int-en">People in the Talmud</span>
+            <span class="int-he">אנשים בתלמוד</span>
+        </h1>
+        <div class="section">
+            {% for r in gens|partition_by:"2" %}
+                <div class="generations-row">
+                    {% for gen in r %}
+                        <div class="talmudic-generation">
+                        <h3>
+                            <span class="int-en">{{ gen.name_en }}</span>
+                            <span class="int-he">{{ gen.name_he }}</span>
+                        </h3>
+                        <h4>
+                            <span class="int-en">{{ gen.years_en }}</span>
+                            <span class="int-he">{{ gen.years_he }}</span>
+                        </h4>
+                        {% for person in gen.people %}
+                            <p class="author">
+                            {{ person|person_link }}
+                            </p>
+                        {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

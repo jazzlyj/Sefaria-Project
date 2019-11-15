@@ -27,51 +27,99 @@
 
 # OS generated files #
 ######################
+.DS_Store
 .DS_Store?
 ehthumbs.db
 Icon?
 Thumbs.db
 .idea
 
-# Apache Config  #
-#############
+# Apache Config #
+#################
 .htaccess
 .htpasswd
 
 # Redis Dumps #
-##############
+###############
 dump.rdb
+
+# Node Modules #
+################
+node_modules
 
 # PyCharm directory #
 #####################
 /.idea
 
-# Sefaria Local Settings file #
-######################
-/sefaria/local_settings.py
+# Visual Studio Code directory #
+#####################
+/.vscode
 
-# Symlink needed for Djano admin
+# pystest cache #
+#####################
+/.pytest_cache
+/sefaria/tests/.pytest_cache
+
+
+# Sefaria Local Settings files #
+################################
+/sefaria/local_settings.py
+/node/local_settings.json
+
+
+# Site specific templates and urls #
+####################################
+# /site
+
+# Symlink needed for Djano admin #
+##################################
 /static/admin
 
 #  Virtualenv Files #
+#####################
 venv/
-.pycharm-bash
 
 # Partner files #
+#################
 /static/partner
 
-# Enviornment Specific Mongo Dumps
-system.users.bson
-
-# Robots.txt
+# Robots.txt #
+##############
 /static/robots.txt
 
-# Backed up Data
+# Sitemaps #
+############
+/static/sitemaps
+
+# Backed up Data # 
+##################
 /data/backup
 
-#Logs
+# Private Data Files # 
+##################
+/data/private
+
+# Logs #
+########
 /logs
 /log
 
-#Docs
+# Docs #
+########
 /doc/_build
+
+# Client secrets for Google OAuth 2.0
+#####################################
+client_secrets.json
+
+# Webpack #
+###########
+/static/bundles
+webpack-stats.*\.json
+webpack-stats.json
+
+# PAGERANK #
+static/pagerank.json
+static/sheetrank.json
+
+/random_files

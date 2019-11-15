@@ -2,6 +2,9 @@
 
 import pytest
 from sefaria.model import *
+import re
+from sefaria.system.exceptions import InputError, BookNameError
+
 
 
 def setup_module(module):
@@ -146,13 +149,126 @@ def setup_module(module):
 
 
 def test_relationships():
-    root.first_child().first_child() is root.first_leaf()
-    root.last_child().last_child() is root.last_leaf()
-    root.first_child().next_sibling().prev_sibling() is root.first_child()
-    root.first_child().last_child().next_leaf() is root.first_child().next_sibling().first_child()
-    root.first_child().next_sibling().first_child().prev_leaf() is root.first_child().last_child()
+    assert root.first_child().first_child() is root.first_leaf()
+    assert root.last_child().last_child() is root.last_leaf()
+    assert root.first_child().next_sibling().prev_sibling() is root.first_child()
+    assert root.first_child().last_child().next_leaf() is root.first_child().next_sibling().first_child()
+    assert root.first_child().next_sibling().first_child().prev_leaf() is root.first_child().last_child()
 
-    root.first_child().prev_sibling() is None
-    root.last_child().next_sibling() is None
-    root.first_leaf().prev_sibling() is None
-    root.last_leaf().next_sibling() is None
+    assert root.first_child().prev_sibling() is None
+    assert root.last_child().next_sibling() is None
+    assert root.first_leaf().prev_sibling() is None
+    assert root.last_leaf().next_sibling() is None
+
+
+def test_ancestors():
+    assert root.last_leaf().ancestors() == [root, root.last_child()]
+
+
+def test_text_index_map():
+    def tokenizer(s):
+        s = re.sub(ur'<.+?>',u'',s).strip()
+        return re.split('\s+', s)
+
+
+    nodes = library.get_index("Megillat Taanit").nodes
+    index_list, ref_list = nodes.text_index_map(tokenizer=tokenizer)
+    assert index_list[1] == 9
+    assert index_list[2] == 20
+    assert index_list[5] == 423
+
+    #now let's get serious. run text_index_map and check for rand_inds that each ref at that ind matches the corresponding indices in index_list
+    index = library.get_index("Otzar Midrashim")
+    nodes = index.nodes
+    index_list, ref_list = nodes.text_index_map(tokenizer=tokenizer)
+    mes_list = index.nodes.traverse_to_list(
+        lambda n, _: TextChunk(n.ref(), "he").ja().flatten_to_array() if not n.children else [])
+    mes_str_array = [w for seg in mes_list for w in tokenizer(seg)]
+
+    rand_inds = [1,20,45,1046,len(index_list)-2]
+    for ri in rand_inds:
+        assert u' '.join(tokenizer(ref_list[ri].text("he").text)) == u' '.join(mes_str_array[index_list[ri]:index_list[ri+1]])
+
+    index = library.get_index("Genesis")
+    nodes = index.nodes
+    index_list, ref_list = nodes.text_index_map(tokenizer=tokenizer, lang="he", vtitle="Tanach with Text Only")
+    mes_list = index.nodes.traverse_to_list(
+        lambda n, _: TextChunk(n.ref(), lang="he", vtitle="Tanach with Text Only").ja().flatten_to_array() if not n.children else [])
+    mes_str_array = [w for seg in mes_list for w in tokenizer(seg)]
+
+    rand_inds = [1, 20, 245, len(index_list)-2]
+    for ri in rand_inds:
+        assert u' '.join(tokenizer(ref_list[ri].text(lang="he",vtitle="Tanach with Text Only").text)) == u' '.join(mes_str_array[index_list[ri]:index_list[ri+1]])
+
+
+def test_ja_node_with_hyphens():
+    node = JaggedArrayNode()
+    node.add_primary_titles(u'Title with-this', u'משהו')
+    node.add_structure(['Something'])
+    with pytest.raises(InputError):
+        node.validate()
+
+def test_ja_node_without_primary():
+    node = JaggedArrayNode()
+    node.add_title(u'Title with this', 'en')
+    node.add_title(u'משהו', 'he')
+    node.add_structure(['Something'])
+    with pytest.raises(InputError):
+        node.validate()
+
+def test_non_ascii():
+    node = JaggedArrayNode()
+    node.add_primary_titles(u'Title with this\u2019', u'משהו')
+    node.add_structure(['Something'])
+    with pytest.raises(InputError):
+        node.validate()
+
+
+@pytest.mark.deep
+def test_nodes_missing_content():
+    # check a known simple text and complex text
+    assert library.get_index("Job").nodes.nodes_missing_content() == (False, [])
+    assert library.get_index("Pesach Haggadah").nodes.nodes_missing_content() == (False, [])
+
+    # construct a more complex schema. First, ensure that the index does not exist in the system
+    try:
+        test_index = library.get_index("test text")
+        test_index.delete()
+    except BookNameError:
+        pass
+
+    root_node = SchemaNode()
+    root_node.add_primary_titles('test text', u'מבחן')
+    middle1 = SchemaNode()
+    middle1.add_primary_titles('mid1', u'אמצע1')
+    for i in range(1, 4):
+        leaf = JaggedArrayNode()
+        leaf.add_primary_titles(u'leaf{}'.format(i), u'קצה{}'.format(i))
+        leaf.add_structure(["Verse"])
+        middle1.append(leaf)
+    root_node.append(middle1)
+    middle2 = SchemaNode()
+    middle2.add_primary_titles('mid2', u'אמצע2')
+    for i in range(4, 6):
+        leaf = JaggedArrayNode()
+        leaf.add_primary_titles(u'leaf{}'.format(i), u'קצה{}'.format(i))
+        leaf.add_structure(["Verse"])
+        middle2.append(leaf)
+    root_node.append(middle2)
+    root_node.validate()
+    test_index = Index({
+        'title': 'test text',
+        'categories': ['Other'],
+        'schema': root_node.serialize()
+    })
+    test_index.save()
+
+    # add text
+    chunk = Ref('test text, mid1, leaf1').text('en', 'test version')
+    chunk.text = ['Lorem ipsum']
+    chunk.save()
+
+    result = test_index.nodes.nodes_missing_content()
+    assert result[0] is False
+    assert len(result[1]) == 3
+    test_index.delete()

@@ -7,6 +7,8 @@ from sefaria.system.exceptions import InputError
 
 
 class Test_Schema(object):
+    # This needs a bunch of hebrew titles to validate
+    @pytest.mark.failing
     def test_schema_load(self):
         i = Index().load({"title": "Mishnah Torah Test"})
         if i:
@@ -246,7 +248,7 @@ class Test_Schema(object):
                                 },
                                 {
                                 "lang": "en",
-                                "text": "Hilchot Teshuva",
+                                "text": "Hilchot TeshuvaX",
                                 "presentation": "alone"
                                 }
                             ],
@@ -299,7 +301,6 @@ class Test_Schema(object):
             Ref("Mishnah Torah Test, Introduction, TransmisXsion")  # Mispelled last piece
 
         i.delete()
-
 
     def test_schema_load_2(self):
         i = Index().load({"title": "Lekutei Moharan"})
@@ -444,7 +445,6 @@ class Test_Schema(object):
         assert lm_schema == serialized
 
         i.delete()
-
 
     def test_sharedTitles(self):
         i = Index().load({"title": "Parshanut Test"})
@@ -592,6 +592,151 @@ class Test_Schema(object):
 
         assert Ref("Stest, Vaera 3") == Ref("Stest 10:24-11:3")
         assert Ref("Stest, Vaera") == Ref("Stest 6:2-9:35")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Foobar")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Foobar 3")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Vaera 12")
+
+        i.delete()
+
+    def test_complex_with_alt_struct(self):
+        i = Index().load({"title": "CAtest"})
+        if i:
+            i.delete()
+        schema = {
+            "key": "CAtest",
+            "titles": [
+                {
+                    "lang": "en",
+                    "text": "CAtest",
+                    "primary": True
+                },
+                {
+                    "lang": "he",
+                    "text": u'כגככג',
+                    "primary": True
+                }
+            ],
+            "nodes": [
+                {
+                    "key": "child_one",
+                    "nodeType": "JaggedArrayNode",
+                    "depth": 2,
+                    "addressTypes": ["Integer", "Integer"],
+                    "sectionNames": ["Chapter", "Verse"],
+                    "titles": [
+                        {
+                            "lang": "en",
+                            "text": "Kid",
+                            "primary": True
+                        },
+                        {
+                            "lang": "he",
+                            "text": u'ילד',
+                            "primary": True
+                        }
+                    ],
+                },
+                {
+                    "key": "child_two",
+                    "nodeType": "JaggedArrayNode",
+                    "depth": 2,
+                    "addressTypes": ["Integer", "Integer"],
+                    "sectionNames": ["Chapter", "Verse"],
+                    "titles": [
+                        {
+                            "lang": "en",
+                            "text": "Other Kid",
+                            "primary": True
+                        },
+                        {
+                            "lang": "he",
+                            "text": u'ילד אחר',
+                            "primary": True
+                        }
+                    ],
+                }
+            ]
+        }
+
+        structs = {
+            "parasha": {
+                "nodes": [
+                    {
+                        'sharedTitle': u'Shemot',
+                        "nodeType": "ArrayMapNode",
+                        "depth": 1,
+                        "addressTypes": ["Integer"],
+                        "sectionNames": ["Aliyah"],
+                        'wholeRef': u'CAtest, Kid 1:1-6:1',
+                        'refs': [
+                                "CAtest, Kid 1:1-1:17",
+                                "CAtest, Kid 1:18-2:10",
+                                "CAtest, Kid 2:11-2:25",
+                                "CAtest, Kid 3:1-3:15",
+                                "CAtest, Kid 3:16-4:17",
+                                "CAtest, Kid 4:18-4:31",
+                                "CAtest, Kid 5:1-6:1",
+                        ]
+                    },
+                    {
+                        'sharedTitle': u'Vaera',
+                        "nodeType": "ArrayMapNode",
+                        "depth": 1,
+                        "addressTypes": ["Integer"],
+                        "sectionNames": ["Aliyah"],
+                        'wholeRef': u'CAtest, Kid 6:2-9:35',
+                        'refs': [
+                            "CAtest, Kid 10:1-10:11",
+                            "CAtest, Kid 10:12-10:23",
+                            "CAtest, Kid 10:24-11:3",
+                            "CAtest, Kid 11:4-12:20",
+                            "CAtest, Kid 12:21-12:28",
+                            "CAtest, Kid 12:29-12:51",
+                            "CAtest, Kid 13:1-13:16",
+                        ]
+                    },
+                ]
+            }
+        }
+
+        creating_dict = {
+            "schema": schema,
+            "title": "CAtest",
+            "categories": ["Chasidut"],
+            "alt_structs": structs
+        }
+        i = Index(creating_dict)
+        i.save()
+        i.nodes.all_tree_titles("en")
+        i.nodes.title_dict("en")
+        schema['titles'] = sorted(schema['titles'], key=lambda x: x['text'])
+        serialized = i.nodes.serialize()
+        serialized['titles'] = sorted(serialized['titles'], key=lambda x: x['text'])
+        assert schema == serialized
+
+        contents = i.contents(raw=True)
+        contents['schema']['titles'] = sorted(contents['schema']['titles'], key=lambda x: x['text'])
+        creating_dict['schema']['titles'] = sorted(creating_dict['schema']['titles'], key=lambda x: x['text'])
+        assert contents == creating_dict
+
+        assert Ref("CAtest, Vaera 3") == Ref("CAtest, Kid 10:24-11:3")
+        assert Ref("CAtest, Vaera") == Ref("CAtest, Kid 6:2-9:35")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Foobar")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Foobar 3")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Vaera 12")
+
         i.delete()
 
     def test_numbered_primary_struct(self):
@@ -672,6 +817,12 @@ class Test_Schema(object):
 
         assert Ref("Stest 3:5") == Ref("Stest, Bo 5")
         assert Ref("Stest 3") == Ref("Stest, Bo")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Foobar")
+
+        with pytest.raises(InputError):
+            Ref("Stest, Foobar 3")
 
         i.delete()
 
@@ -768,5 +919,63 @@ class Test_Schema(object):
 
         i.delete()
 
+    def test_quick_initialization(self):
+        old_style = JaggedArrayNode()
+        old_style.add_title('Title', 'en', primary=True)
+        old_style.add_title(u'כותרת', 'he', primary=True)
+        old_style.key = 'Title'
+        old_style.sectionNames = ['Chapter', 'Verse']
+        old_style.addressTypes = ['Integer', 'Integer']
+        old_style.depth = 2
 
-#todo : test default
+        quick_way = JaggedArrayNode()
+        quick_way.add_primary_titles('Title', u'כותרת')
+        quick_way.add_structure(['Chapter', 'Verse'])
+
+        assert quick_way.serialize() == old_style.serialize()
+
+class Test_Default_Nodes(object):
+    @classmethod
+    def setup_class(cls):
+        pass
+
+    @classmethod
+    def teardown_class(cls):
+        v = Version().load({"title":"Chofetz Chaim", "versionTitle": "test_default_node"})
+        if v:
+            v.delete()
+
+    def test_derivations(self):
+        ref = Ref("Chofetz_Chaim,_Part_One,_The_Prohibition_Against_Lashon_Hara,_Principle_1")
+        assert ref.has_default_child()
+        child_ref = ref.default_child_ref()
+        assert ref != child_ref
+
+        sn = ref.index_node
+        assert isinstance(sn, SchemaNode)
+        assert not sn.is_default()
+        assert sn.has_default_child()
+        dnode = sn.get_default_child()
+        assert dnode.is_default()
+
+
+    def test_default_in_leaf_nodes(self):
+        sn = Ref("Chofetz_Chaim,_Part_One,_The_Prohibition_Against_Lashon_Hara,_Principle_1").index_node
+        assert isinstance(sn, SchemaNode)
+        dnode = sn.get_default_child()
+        root = sn.root()
+        leaves = root.get_leaf_nodes()
+        assert dnode in leaves
+        assert sn not in leaves
+
+    def test_load_default_text_chunk(self):
+        ref = Ref("Chofetz_Chaim,_Part_One,_The_Prohibition_Against_Lashon_Hara,_Principle_1")
+        TextChunk(ref)
+
+    def test_load_default_text_chunk(self):
+        ref = Ref("Chofetz_Chaim,_Part_One,_The_Prohibition_Against_Lashon_Hara,_Principle_1")
+        tc = TextChunk(ref, "en", "test_default_node")
+        tc.text = [["Foo", "Bar", "Blitz"],["Glam", "Blam", "Flam"]]
+        tc.save()
+        subref = Ref("Chofetz_Chaim,_Part_One,_The_Prohibition_Against_Lashon_Hara,_Principle_1.2.3")
+        assert TextChunk(subref, "en", "test_default_node").text == "Flam"

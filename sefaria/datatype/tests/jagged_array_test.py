@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import sefaria.datatype.jagged_array as ja
+import pytest
 
 
 def setup_module(module):
-    global twoby, threeby, two_by_mask
+    global twoby, threeby, threeby_empty_section, two_by_mask
     twoby = [
                 ["Line 1:1", "This is the first second", "First third"],
                 ["Chapter 2, Verse 1", "2:2", "2:3"],
@@ -32,8 +33,29 @@ def setup_module(module):
             ["Third first", "Third second", "Third third"]
         ],
     ]
+    threeby_empty_section = [
+        [
+            ["Part 1 Line 1:1", "This is the first second", "First third"],
+            ["Chapter 2, Verse 1", "2:2", "2:3"],
+            ["Third first", "Third second", "Third third"]
+        ],
+        [
+            ["Part 2 Line 1:1", "This is the first second", "First third"],
+            ["Chapter 2, Verse 1", "2:2", "2:3"],
+            ["Third first", "Third second", "Third third"]
+        ],
+        [
+            [],
+            []
+        ],
+        [
+            ["Part 3 Line 1:1", "This is the first second", "First third"],
+            ["Chapter 2, Verse 1", "2:2", "2:3"],
+            ["Third first", "Third second", "Third third"]
+        ],
+    ]
 
-class Test_Jaged_Array(object):
+class Test_Jagged_Array(object):
 
     def test_ja_normalize(self):
         input_ja = ["a",[],["","a", ["c"]],["",""],["b"]]
@@ -42,7 +64,28 @@ class Test_Jaged_Array(object):
         jaobj.normalize()
         assert jaobj.array() == output_ja
 
+    def test_last_index(self):
+        assert ja.JaggedIntArray([
+            [[1,3],[4,5],[7]],
+            [[1,2,3],[2,2],[8,8,8]],
+            [[0],[1],[2,3,4],[7,7,7,7,7]]
+        ]).last_index(3) == [2, 3, 4]
+        assert ja.JaggedIntArray([
+            [[1,3],[4,5],[7]],
+            [[1,2,3],[2,2],[8,8,8]],
+            [[0],[1],[2,3,4],[7,7,7,7,7],[],[]]
+        ]).last_index(3) == [2, 3, 4]
+
+
+class Test_Jagged_Int_Array(object):
+    def test_sum(self):
+        assert ja.JaggedIntArray([[1, 2], [3, 4]]) + ja.JaggedIntArray([[2, 3], [4]]) == ja.JaggedIntArray([[3, 5], [7, 4]])
+
+
 class Test_Jagged_Text_Array(object):
+    def test_until_last_nonempty(self):
+        sparse_ja = ja.JaggedTextArray([["", "", ""], ["", "foo", "", "bar", ""], ["", "", ""],[]])
+        assert sparse_ja.sub_array_length([],until_last_nonempty=True) == 3
 
     def test_count_words(self):
         assert ja.JaggedTextArray(twoby).word_count() == 21
@@ -62,6 +105,15 @@ class Test_Jagged_Text_Array(object):
         assert ja.JaggedTextArray(threeby) == ja.JaggedTextArray(threeby)
         assert ja.JaggedTextArray(twoby) != ja.JaggedTextArray(threeby)
 
+
+    def test_distance(self):
+        jia = ja.JaggedTextArray(threeby)
+        jia_empty = ja.JaggedTextArray(threeby_empty_section)
+        assert jia.distance([0],[0,0,2]) == 2 #check if padding correctly
+        assert jia.distance([0],[0,2]) == 6 #padding for both inputs
+        assert jia.distance([0,0,1],[2,2,2]) == 25 #recursive distance
+        assert jia_empty.distance([0,0,1], [3,2,2])  == 25
+        assert jia_empty.distance([0,0,1], [2,1,3]) == 17
     def test_subarray(self):
         assert ja.JaggedTextArray(threeby).subarray([0],[0]) == ja.JaggedTextArray([
             ["Part 1 Line 1:1", "This is the first second", "First third"],
@@ -77,6 +129,10 @@ class Test_Jagged_Text_Array(object):
             ["2:2", "2:3"],
             ["Third first", "Third second"]
         ])
+
+        assert ja.JaggedTextArray(threeby).subarray([1, 1, 1], [1, 1, 2]) == ja.JaggedTextArray(
+            ["2:2", "2:3"],
+        )
 
     def test_set_element(self):
         j = ja.JaggedTextArray(twoby).set_element([1,1], "Foobar")
@@ -160,7 +216,13 @@ class Test_Jagged_Text_Array(object):
         assert ja.JaggedTextArray(twoby).sections() == [[0],[1],[2]]
         assert ja.JaggedTextArray(threeby).sections() == [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]]
 
-    def test_FAILING_IN_SUITE_trim_ending_whitespace(self):
+    def test_shape(self):
+        assert ja.JaggedTextArray(twoby).shape() == [3,3,3]
+        assert ja.JaggedTextArray(threeby).shape() == [[3, 3, 3],[3, 3, 3],[3, 3, 3]]
+        assert ja.JaggedTextArray(["a","b","c"]).shape() == 3
+
+    @pytest.mark.failing
+    def test_trim_ending_whitespace(self):
         # Note - this test can fail when run in the full suite, because earlier test data bleeds through.
         # See warning at top of jagged_array.py
         #do no harm
@@ -204,7 +266,19 @@ class Test_Jagged_Text_Array(object):
     def test_resize(self):
         assert ja.JaggedTextArray(twoby).resize(1).resize(-1) == ja.JaggedTextArray(twoby)
 
-    def test_flatten(self):
+    def test_resize_with_empty_string(self):
+        a = ["Foo","Bar","","Quux"]
+        assert ja.JaggedTextArray(a).resize(1).resize(-1) == ja.JaggedTextArray(a)
+
+        # A bug had left [] alone during downsize.
+        b = [["Foo"],["Bar"],[],["Quux"]]
+        c = [["Foo"],["Bar"],[""],["Quux"]]
+
+        jb = ja.JaggedTextArray(b).resize(-1)
+        jc = ja.JaggedTextArray(c).resize(-1)
+        assert jb == jc, "{} != {}".format(jb.array(), jc.array())
+
+    def test_flatten_to_array(self):
         assert ja.JaggedTextArray(threeby).flatten_to_array() == [
             "Part 1 Line 1:1", "This is the first second", "First third",
             "Chapter 2, Verse 1", "2:2", "2:3",
@@ -217,6 +291,19 @@ class Test_Jagged_Text_Array(object):
             "Third first", "Third second", "Third third"
         ]
 
+    def test_flatten_to_string(self):
+        assert ja.JaggedTextArray("Test").flatten_to_string() == "Test"
+        assert ja.JaggedTextArray(["Test", "More", "Test"]).flatten_to_string() == "Test More Test"
+
+    def test_next_prev(self):
+        sparse_ja = ja.JaggedTextArray([["","",""],["","foo","","bar",""],["","",""]])
+        assert sparse_ja.next_index([0,0]) == [1, 1]
+        assert sparse_ja.next_index([]) == [1, 1]
+        assert sparse_ja.next_index() == [1, 1]
+
+        assert sparse_ja.prev_index([]) == [1, 3]
+        assert sparse_ja.prev_index() == [1, 3]
+
 
 class Test_Depth_0(object):
     def test_depth_0(self):
@@ -226,5 +313,5 @@ class Test_Depth_0(object):
         assert not j.is_empty()
         assert j.verse_count() == 1
         assert j.mask() == ja.JaggedIntArray(1)
-        assert j.flatten_to_array() == "Fee Fi Fo Fum"
+        assert j.flatten_to_array() == ["Fee Fi Fo Fum"]
 

@@ -7,7 +7,7 @@ from helper.text import rename_category
 import sefaria.model.text as tm
 from sefaria.model.link import get_book_link_collection
 
-
+@pytest.mark.deep
 def test_rename_category():
 
     old = "Rishonim"
@@ -25,7 +25,7 @@ def test_rename_category():
 
 
 def test_get_commentary_texts_list():
-    l = tm.library.get_commentary_version_titles()
+    l = tm.library.get_dependant_indices()
     assert u'Baal HaTurim on Genesis' in l
     assert u'Bartenura on Mishnah Eduyot' in l
     assert u'Tosafot on Pesachim' in l
@@ -38,5 +38,5 @@ def test_get_text_categories():
 
 
 def test_get_book_link_collection():
-    res = get_book_link_collection("Shabbat", "Tanach")
+    res = get_book_link_collection("Shabbat", "Tanakh")
     assert len(res) > 650

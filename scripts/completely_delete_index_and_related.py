@@ -34,16 +34,13 @@ def remove_old_index_and_rename(idx_title):
 
     indx = Index().load({'title': idx_title})
     #since Index validation prevents having duplicate titles in the system, we can pnly copy the alternate titles after the old index is removed
-    old_title_variants = [x for x in indx.nodes.get_titles() if 'primary' not in x or x['primary'] is False]
+    old_title_variants = [x for x in indx.nodes.get_titles_object() if 'primary' not in x or x['primary'] is False]
     old_he_primary = indx.get_title('he')
 
     vs = VersionSet({'title': idx_title})
 
-    commentaries = library.get_commentary_versions_on_book(idx_title)
 
-    #delete History - for versions and commentary versions
-    commentators = library.get_commentator_titles()
-    pattern = ur"(^{} \d)|(^({}) on {} \d)".format(idx_title, "|".join(commentators), idx_title)
+    pattern = Ref(idx_title).regex(anchored=True)
 
     print "deleting history for {}".format(idx_title)
     HistorySet({"ref": {"$regex": pattern}}).delete()
@@ -52,13 +49,11 @@ def remove_old_index_and_rename(idx_title):
     HistorySet({"new.refs": {"$regex": pattern}})
 
     print "deleting version states for {}".format(idx_title)
-    VersionStateSet({"title": {"$regex": ur"(^{})|(^({}) on {})".format(idx_title, "|".join(commentators), idx_title)}}).delete()
+    VersionStateSet({"title": idx_title}).delete()
     print "deleting translation requests for {}".format(idx_title)
-    TranslationRequestSet({'ref': {"$regex": ur"(^{})|(^({}) on {})".format(idx_title, "|".join(commentators), idx_title)}}).delete()
+    TranslationRequestSet({'ref': {"$regex": pattern}}).delete()
 
 
-    print "deleting commentaries for {}".format(idx_title)
-    commentaries.delete()
     print "deleting versions of {}".format(idx_title)
     vs.delete()
     print "deleting {}".format(idx_title)
@@ -76,6 +71,7 @@ def remove_old_index_and_rename(idx_title):
 
 
     #manually rename history and links, since the dependencies don't work.
+    temp_title = re.escape(temp_title)
     from sefaria.system.database import db
     print "manually renaming  links and history"
     ls = db.links.find({"refs":{"$regex":"^{}".format(temp_title)}})

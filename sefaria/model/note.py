@@ -4,10 +4,12 @@ Writes to MongoDB Collection: notes
 """
 
 import regex as re
-import bleach
 
 from . import abstract as abst
-from sefaria.model.text import Ref, IndexSet
+from sefaria.model.text import Ref
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Note(abst.AbstractMongoRecord):
@@ -16,8 +18,8 @@ class Note(abst.AbstractMongoRecord):
     """
     collection    = 'notes'
     history_noun  = 'note'
-    allowed_tags  = ("i", "b", "br", "u", "strong", "em", "big", "small", "span", "div", "img", "a")
-    allowed_attrs = {
+    ALLOWED_TAGS  = ("i", "b", "br", "u", "strong", "em", "big", "small", "span", "div", "img", "a")
+    ALLOWED_ATTRS = {
                         '*': ['class'],
                         'a': ['href', 'rel'],
                         'img': ['src', 'alt'],
@@ -37,7 +39,6 @@ class Note(abst.AbstractMongoRecord):
 
     def _normalize(self):
         self.ref = Ref(self.ref).normal()
-        self.text = bleach.clean(self.text, tags=self.allowed_tags, attributes=self.allowed_attrs)
 
 
 class NoteSet(abst.AbstractMongoSet):
@@ -45,15 +46,19 @@ class NoteSet(abst.AbstractMongoSet):
 
 
 def process_index_title_change_in_notes(indx, **kwargs):
-    if indx.is_commentary():
-        pattern = r'{} on '.format(re.escape(kwargs["old"]))
-    else:
-        commentators = IndexSet({"categories.0": "Commentary"}).distinct("title")
-        pattern = ur"(^{} \d)|(^({}) on {} \d)".format(re.escape(kwargs["old"]), "|".join(commentators), re.escape(kwargs["old"]))
+    print "Cascading Notes {} to {}".format(kwargs['old'], kwargs['new'])
+    pattern = Ref(indx.title).regex()
+    pattern = pattern.replace(re.escape(indx.title), re.escape(kwargs["old"]))
     notes = NoteSet({"ref": {"$regex": pattern}})
     for n in notes:
         try:
             n.ref = n.ref.replace(kwargs["old"], kwargs["new"], 1)
             n.save()
         except Exception:
-            pass #todo: log me, and wrap other handlers in try/catch
+            logger.warning(u"Deleting note that failed to save: {}".format(n.ref))
+            n.delete()
+
+def process_index_delete_in_notes(indx, **kwargs):
+    from sefaria.model.text import prepare_index_regex_for_dependency_process
+    pattern = prepare_index_regex_for_dependency_process(indx)
+    NoteSet({"ref": {"$regex": pattern}}).delete()

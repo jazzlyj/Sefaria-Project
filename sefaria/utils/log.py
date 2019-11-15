@@ -3,6 +3,7 @@
 import logging
 from django.conf import settings
 import requests, json, traceback
+from requests.exceptions import ConnectionError
 
 
 
@@ -15,11 +16,6 @@ class CategoryFilter(logging.Filter):
             return True
         if record:
             pass
-
-
-class RequireDebugTrue(logging.Filter):
-    def filter(self, record):
-        return settings.DEBUG
 
 
 class ErrorTypeFilter(logging.Filter):
@@ -35,7 +31,7 @@ class ErrorTypeFilter(logging.Filter):
             retval = True if self.exclude else False
         else:
             if self.exclude:
-                retval =  all(record.exc_info[0].__name__ != err_type for err_type in self.error_types)
+                retval = all(record.exc_info[0].__name__ != err_type for err_type in self.error_types)
             else:
                 retval = any(record.exc_info[0].__name__ == err_type for err_type in self.error_types)
                 #get rid of the stack trace?
@@ -61,6 +57,7 @@ class SlackLogHandler(logging.Handler):
             "icon_emoji": ":scream:",
             "channel": self.channel
         }
-        requests.post(self.logging_url, data=json.dumps(slack_payload))
-
-
+        try:
+            requests.post(self.logging_url, data=json.dumps(slack_payload))
+        except ConnectionError:
+            pass  # basa. but slack posting failures should not crash a script

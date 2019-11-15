@@ -1,0 +1,270 @@
+{% load render_bundle from webpack_loader %}
+{% load sefaria_tags %}
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>{{ page_title }} | Sefaria</title>
+	<meta name="description" content="{{ description_text }}... [{{ page_title }} {{ title_variants }}]">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<link rel="stylesheet" href="{% static 'js/lib/jquery-ui/css/smoothness/jquery-ui-1.8.22.custom.css' %}">
+	<link rel="stylesheet" href="{% static 'css/reader.css' %}">
+    <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.css' %}">
+	<link rel="stylesheet" href="{% static 'css/common.css' %}">
+	<link rel="stylesheet" href="{% static 'css/reader-print.css' %}" media="print" />
+    <link rel="stylesheet" href="{% static 'css/s2.css' %}">
+
+	<!-- https://realfavicongenerator.net -->
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=xQzLlLp7oR">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=xQzLlLp7oR">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=xQzLlLp7oR">
+	<link rel="manifest" href="/manifest.json?v=xQzLlLp7oR">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg?v=xQzLlLp7oR" color="#273557">
+	<link rel="shortcut icon" href="/favicon.ico?v=xQzLlLp7oR">
+	<meta name="theme-color" content="#273557">
+
+	<!-- https://realfavicongenerator.net -->
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=xQzLlLp7oR">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=xQzLlLp7oR">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=xQzLlLp7oR">
+	<link rel="manifest" href="/manifest.json?v=xQzLlLp7oR">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg?v=xQzLlLp7oR" color="#273557">
+	<link rel="shortcut icon" href="/favicon.ico?v=xQzLlLp7oR">
+	<meta name="theme-color" content="#273557">
+
+    <style>
+      body {
+        overflow: visible;
+      }
+    </style>
+
+
+</head>
+
+<body class="{{ contentLang }} {{ layout }} {{ lines }} {% if not hasSidebar %}noCommentary{% endif %} {% if EMBED %}embeded{% endif %} {% if onlyLanguage %}onlyLanguage{% endif %} {{ sidebarLang }}">
+
+	<div id="topLeftLinks">
+		{% if "book" in text %}
+		<a id="exittextTocLink" href="/{{ text.indexTitle }}">&laquo; {{ text.indexTitle }}</a>
+		{% endif %}
+	</div>
+
+	<div class="screen-container" style="left:-5000%">
+		<div class="screen" style="left:5000%">
+		</div>
+	</div>
+
+	<div id="newTextModal" class="modal">
+		<div class="header">Add a New Text</div>
+		<div id="newTextMsg">Text or commentator name:</div>
+		<input id="newTextName">
+		<span id="newTextActions">
+			<span id="newTextOK" class="action btn inactive">Add</span>
+			<span id="newTextCancel" class="action btn">Cancel</span>
+
+		</span>
+	</div>
+
+
+	<div id="reviewsModal" class="modal">
+		<div id="reviewsWrapper">
+			<div id="reviewTitle">
+			</div>
+			<div id="reviewAbout">
+			</div>
+			<div id="reviews">
+			</div>
+
+			{% if request.user.is_authenticated %}
+			<div id="addReview">
+				<div id="yourReviewTitle">Your Review:</div>
+				<textarea id="reviewText"></textarea>
+				<a href="#" id="reviewHelpLink">How should I write a review?</a>
+				<div id="score>">
+					<div id="raty"></div>
+				</div>
+
+			</div>
+
+			<div id="reviewButtonsBox">
+				<div class="btn save">Save</div>
+				<div class="btn cancel">Cancel</div>
+			</div>
+			{% else %}
+			<div id="loginToReview">
+				To add your review, please <a href="/login?next={{ request.get_full_path }}">log in</a> or <a href="/register?next={{ request.get_full_path }}">register</a>.
+			</div>
+			<div id="reviewButtonsBox">
+				<div class="btn cancel">Close</div>
+			</div>
+			{% endif %}
+	</div>
+	<div id="reviewHelp">
+			<h3>Writing Helpful Reviews</h3>
+			<p><b>For primary texts and historical translations:</b> Indicate what outside source (book, web page) was used to compare the text, or make clear that your review is only looking at the text present.</p>
+			<div class="reviewExamples">
+				<div class="exampleReview">I compared this text to X printed edition and found no problems.</div>
+				<div class="exampleReview">I checked this text against the edition on X website, all looks good.</div>
+				<div class="exampleReview">I read this text carefully and don't see anything wrong.</div>
+			</div>
+
+			<p><b>For original translations:</b> Review the text carefully next to the original, and comment on its accuracy and style according to our <a href="/translation-guidelines" target="_blank">translation guidelines</a>.</p>
+			<div class="reviewExamples">
+				<div class="exampleReview">This translation seems accurate to me.</div>
+				<div class="exampleReview">The language could be improved, but the translation seems right.</div>
+				<div class="exampleReview">This translation misunderstands the term X.</div>
+			</div>
+
+			<div id="scoreHelp">
+				<b>How to Score your Review:</b>
+				<div class="scoreExample">
+					<span class="raty" data-raty="1"></span> Compared closesly to a source, confident there are no problems.
+				</div>
+				<div class="scoreExample">
+					<span class="raty" data-raty="0.8"></span> Compared to a source, didn't notice any problems.
+				</div>
+				<div class="scoreExample">
+					<span class="raty" data-raty="0.6"></span> Looks problem free, but could be reviewed more closely.
+				</div>
+				<div class="scoreExample">
+					<span class="raty" data-raty="0.4"></span> Found some issues that need to be addressed.
+				</div>
+				<div class="scoreExample">
+					<span class="raty" data-raty="0.2"></span> Found serious problems that need to be addressed.
+				</div>
+			</div>
+			<div id="reviewHelpOK" class="btn">OK</div>
+		</div>
+	</div>
+
+
+	<div id="newVersionBox">
+        <div id="editButtons" style="display:none;">
+            <span id="addVersionSave" class='btn btn-primary'>Save</span>
+            <span id='addVersionCancel' class='btn'>Cancel</span>
+        </div>
+		<div id="addVersionHeader">
+			<div id="editTitle"></div>
+			<div id="addVersionHeaderLeft">
+				<div class="compareTitle"></div>
+				<a class="compareSource" href="#" target="_blank">Source <i class="fa fa-external-link"></i></a>
+			</div>
+			<div id="addVersionHeaderRight">
+
+				<div id="textTypeForm">
+					<label class="option">
+						<input type="radio" id="originalRadio" name="newTextType" value="original" checked="checked">
+						Original Translation
+					</label>
+					<label class="option">
+						<input type="radio" id="copyRadio" name="newTextType" value="copy">
+						Copied Text
+					</label>
+					<span id="showOriginal"></span>
+				</div>
+				<div id="cc0Message" class="alert">
+					This text will be published with a <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">CC-0</a> licence, effectively donating it to the Public Domain. Only submit texts as "Original Translation" that you have authored.
+				</div>
+				<div id="copiedTextForm">
+					<div id="copyWarning" class="alert">
+						Copied texts must either be in the <b>Public Domain</b> or carry a <b>Creative Commons</b> license such as <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">CC0</a>, <a href="http://creativecommons.org/licenses/by/3.0" target="_blank">CC-BY</a>, or <a href="http://creativecommons.org/licenses/by-sa/3.0/" target="_blank">CC-BY-SA</a>. You can learn more about when a text passes into the Public Domain on this <a href="http://copyright.cornell.edu/resources/publicdomain.cfm" target="_blank">summary of Copyright Terms</a>.
+					</div>
+					<div><span>Version Title:</span> <input id="versionTitle"></div>
+					<div><span>Copied from:</span> <input placeholder="a URL or book" id="versionSource"></div>
+				</div>
+
+				<div id="languageForm">
+					<span>Language:</span>
+					<select id="language">
+					  <option value="en">English</option>
+					  <option value="he">Hebrew</option>
+					  <!--
+					  <option value="ar">Aramaic</option>
+					  <option value="ru">Russian</option>
+					  <option value="es">Spanish</option>
+					  <option value="fr">French</option>
+					  <option value="de">German</option>
+					-->
+					</select>
+				</div>
+
+			</div>
+			<div class="clear"></div>
+		</div>
+		<textarea id='newVersion'></textarea>
+		<div id="newTextCompare"></div>
+
+	</div>
+
+	{% include "elements/login_prompt.html" with msg="Please log in to add or edit." %}
+
+<div id="footerContainer"></div>
+
+{% autoescape off %}
+	{% if request.user.is_authenticated %}
+	<div id="s2" class="headerOnly">{{ logged_in_header }}</div>
+	{% else %}
+	<div id="s2" class="headerOnly">{{ logged_out_header }}</div>
+	{% endif %}
+{% endautoescape %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script> <!-- NOTE version; jQuery 2 is currently breaking here in combination with jQuery Autosize and jQuery Raty -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script> <!-- NOTE version; jQuery 2 is currently breaking here in combination with jQuery Autosize and jQuery Raty -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+<script src="/data.js"></script>
+<script>
+  {% autoescape off %}
+  var DJANGO_VARS = {
+    contentLang: "{{ contentLang }}",
+    interfaceLang: "{{ interfaceLang }}",
+    inReaderApp: false,
+    static_url: {{ STATIC_PREFIX }}
+  };
+  {% endautoescape %}
+</script>
+{% render_bundle 'main' %}
+
+{% include "js/jquery.html" %} <!-- this older version of jQuery replaces the one exposed by the app bundle TODO: duplicates abobe? -->
+
+<script src="{% static 'js/lib/keyboard.js' %}"></script>
+<script src="{% static 'js/lib/jquery.scrollTo-1.4.2-min.js' %}"></script>
+<script src="{% static 'js/lib/jquery.history.js' %}"></script>
+<script src="{% static 'js/lib/jquery.easing.1.3.js' %}"></script>
+<script src="{% static 'js/lib/jquery.caret.1.02.js' %}"></script>
+<script src="{% static 'js/lib/jquery.textchange.js' %}"></script>
+<script src="{% static 'js/lib/jquery.autosize.js' %}"></script>
+<script src="{% static 'js/lib/jquery.tag-it.min.js' %}"></script>
+<script src="{% static 'js/lib/jquery.raty.js' %}"></script>
+<script src="{% static 'js/lib/jquery.tooltipster.min.js' %}"></script>
+
+{% include "js/headers.js" %} <!-- TODO: not sure this is needed anymore -->
+<script>
+
+{% autoescape off %}
+	{% include "js/django-csrf.js" %}
+	var sjs = sjs || {};
+
+	$.extend(sjs, {
+		current: {{ initJSON }},
+		langMode: "{{ contentLang }}".substring(0,2)
+	});
+    if("edit_lang" in sjs.current){
+        sjs.langMode = sjs.current["edit_lang"].substring(0,2);
+    }
+
+{% endautoescape %}
+</script>
+<script type="text/javascript" src="{% static 'js/s1/util.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/s1/editor.js' %}"></script>
+
+</body>
+</html>

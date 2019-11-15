@@ -1,58 +1,195 @@
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% get_static_prefix as STATIC_PREFIX %}
+
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes" /> 
-    <meta property="og:image" content="http://www.sefaria.org/static/img/fb-og-image.png"/>
+    <title>{% block title %}{{ title|striptags }}{% endblock %}</title>
+    <meta charset="utf-8"/>
+    <meta name="description" property="og:description" content="{% block description %}{{ desc|striptags }}{% endblock %}"/>
 
-    <title>{% block title %}{% endblock %}</title>
-    {% block head %}{% endblock %}    
-    <link rel="stylesheet" href="/static/js/jquery-ui/css/smoothness/jquery-ui-1.8.22.custom.css">
-    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.css">
-    <link rel="stylesheet" href="/static/font-awesome/css/font-awesome.css">
-    <link rel="stylesheet" href="/static/css/base.css">
-    <link rel="stylesheet" href="/static/css/common.css">
+    <link rel="search" type="application/opensearchdescription+xml" title="Sefaria Search" href="{% static "files/opensearch.xml" %}" />
+    <link rel="alternate" href="//www.sefaria.org{{ request.path }}" hreflang="en" />
+    <link rel="alternate" href="//www.sefaria.org.il{{ request.path }}" hreflang="he" />
+
+    {% block ogtype %}
+        <meta property="og:type" content="website"/>
+    {% endblock %}
+
+    {% block ogimage %}
+        <meta property="og:image" content="https://embed.sefaria.org{{ request.path }}?lang={{request.GET.lang}}&platform=facebook" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+    {% endblock %}
+
+    <meta property="og:title" content="{{title|striptags}}" />
+    <meta property="og:url" content="//www.sefaria.org{{ request.path }}" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@sefariaproject" />
+    <meta name="twitter:title" content="{{title|striptags}}" />
+    <meta name="twitter:description" content="{% block soc_description %}{{ desc|striptags }}{% endblock %}" />
+    <meta name="twitter:image" content="https://embed.sefaria.org{{ request.path }}?lang={{request.GET.lang}}&platform=twitter">
+
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-itunes-app" content="app-id=1163273965">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+    <!-- https://realfavicongenerator.net -->
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'icons/apple-touch-icon.png' %}?v=xQzLlLp7oR">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'icons/favicon-32x32.png' %}?v=xQzLlLp7oR">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'icons/favicon-16x16.png' %}?v=xQzLlLp7oR">
+    <link rel="manifest" href="{% static 'icons/manifest.json' %}?v=xQzLlLp7oR">
+    <link rel="mask-icon" href="{% static 'icons/safari-pinned-tab.svg' %}?v=xQzLlLp7oR" color="#273557">
+    <link rel="shortcut icon" href="{% static 'icons/favicon.ico'%}?v=xQzLlLp7oR">
+    <meta name="theme-color" content="#273557">
+
+
+    {% if ldBreadcrumbs %}{% autoescape off %}
+    <script type="application/ld+json">{{ ldBreadcrumbs }}</script>
+    {% endautoescape %}{% endif %}
+
+    {% block head %}{% endblock %}
+
+    <link rel="stylesheet" href="{% static 'css/common.css' %}">
+    <link rel="stylesheet" href="{%  static 'font-awesome/css/font-awesome.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/keyboard.css' %}">
+    <link rel="stylesheet" href="{%  static 'css/s2.css' %}">
+    <link rel="stylesheet" href="{%  static 'css/s2-print.css' %}" media="print" />
+
+    {% block static_css %}
+    {% if not html %}
+    <link rel="stylesheet" href="{%  static 'css/static.css' %}">
+    {% endif %}
+    {% endblock %}
+
     <style>
         {% block css %}{% endblock %}
     </style>
 
-	<script>
-        {% include "js/analytics.js" %}
-    </script>
 
-    {% if not OFFLINE %}
-    <script src="//ajax.googleapis.com/ajax/libs/webfont/1.5.10/webfont.js"></script>
-    <script>
-      WebFont.load({
-        google: {
-          families: ['Montserrat:400,700', 'Alef:400,700:latin,hebrew' ]
-        }
-      });
-    </script>
+    {% if GOOGLE_TAG_MANAGER_CODE %}
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer',"{{ GOOGLE_TAG_MANAGER_CODE }}");</script>
+    <!-- End Google Tag Manager -->
     {% endif %}
 
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+    <script>
+        WebFont.load({
+          google: {
+            families: ['Crimson Text:400,700'],
+            text: 'ăǎġḥḤḫḳḲŏṭżūŻāīēḗîìi̧ ̆̄'
+          },
+          typekit: {
+            id: 'aeg8div' // Adobe Garamond Pro
+          }
+        });
+        WebFont.load({
+          google: {
+            families: ['Roboto:300,400,700', 'Heebo:300,400,700:hebrew', 'Frank Ruehl Libre:400,700:hebrew'] // The dotted h causes Heebo not to load.
+          }});
+    </script>
 </head>
 
-<body class='{% if contentLang == "bilingual" %}english{% else %}{{ contentLang }}{% endif %}'>
+<body class="interface-{{ request.interfaceLang }}{% if EMBED %} embeded{% endif %} {% block bodyclasses %}{% endblock %}">
+    {% if GOOGLE_TAG_MANAGER_CODE %}
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ GOOGLE_TAG_MANAGER_CODE }}"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) --> 
+    {% endif %}
+
+    {% autoescape off %}
+    {% if html %}
+    <!-- React will complain about whitespace -->
+    <div id="s2">{{ html }}</div>
+    {% else %}
+    <div id="s2" class="headerOnly">{% if request.user.is_authenticated %}{{ logged_in_header }}{% else %}{{ logged_out_header }}{% endif %}</div>
+    {% endif %}
+    {% endautoescape %}
+
+    {% if not html %}
     <div class="wrapper">
-        <div id="content">
-            {% include "header.html" %}
+        <div id="content" class="interface-{{ request.interfaceLang }}">
             {% block content %}{% endblock %}
-            {% include "elements/login_prompt.html" with msg="Please log in to edit." %}
         </div>
     </div>
-	
-    {% block footer %}
-        {% include "elements/footer.html" with class=class %}
+
+    {% block footer %} <!-- todo: sheets is overwriting this, why? -->
+        {% if SITE_SETTINGS.TORAH_SPECIFIC %}
+            <div id="footerContainer">{% include "elements/footer.html" %}</div>
+        {% endif %}
     {% endblock %}
+    {% endif %}
 
-    {% include "js/jquery.html" %}
-    <script src="/static/js/jquery.tooltipster.min.js"></script>
-    <script>{% include "js/django-csrf.js" %}</script>
-    <script src="/static/js/util.js"></script>
-    {% include "js/headers.js" %}
-    
+    <div id="overlay"></div>
+
+    <script src="https://unpkg.com/react@16/umd/react.{% if DEBUG %}development{% else %}production.min{% endif %}.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.{% if DEBUG %}development{% else %}production.min{% endif %}.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+
+    <script src="{% static 'js/lib/keyboard.js' %}"></script>
+    <script src="/data.js"></script>
+
+    <script>
+      {% autoescape off %}
+      if (!window.jQuery) {
+        console.log('loading jquery locally');
+        document.write('<script src="/static/js/lib/jquery.js"><\/script><script src="/static/js/lib/jquery-ui.js"><\/script>');
+      }
+      if (!window.React) {
+          console.log('loading react locally');
+          document.write('<script src="/static/js/lib/react.development.js"><\/script><script src="/static/js/lib/react-dom.development.js"><\/script>');
+      }
+      var DJANGO_VARS = {
+        props: {{ propsJSON|default:"null" }},
+        contentLang: "{{ request.contentLang }}",
+        interfaceLang: "{{ request.interfaceLang }}",
+        inReaderApp: {% if html %}true{% else %}false{% endif %},
+        static_url: {{ STATIC_PREFIX }}
+      };
+      document.addEventListener('copy', function(e) {
+          const selection = document.getSelection()
+          const text_only = selection.toString();
+
+          if (selection.rangeCount) {
+              var container = document.createElement("div");
+              for (var i = 0, len = selection.rangeCount; i < len; ++i) {
+                  container.appendChild(selection.getRangeAt(i).cloneContents());
+              }
+
+            //remove line numbers
+              var lineNumbers = container.getElementsByClassName('segmentNumber');
+              while(lineNumbers.length > 0){
+                  lineNumbers[0].parentNode.removeChild(lineNumbers[0]);
+              }
+
+              html = container.innerHTML;
+          }
+          else {
+              html = text_only;
+          }
+
+          const clipdata = e.clipboardData || window.clipboardData;
+
+          clipdata.setData('text/plain', text_only);
+          clipdata.setData('text/html', html);
+          e.preventDefault();
+      });
+      {% endautoescape %}
+    </script>
+
+    {% render_bundle 'main' %}
+
     {% block js %}{% endblock %}
-
 </body>
 </html>

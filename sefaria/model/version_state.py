@@ -10,11 +10,14 @@ logger = logging.getLogger(__name__)
 from . import abstract as abst
 from . import text
 from . import link
-from text import VersionSet, AbstractIndex, AbstractSchemaContent, IndexSet, library, get_index, Ref
+from text import VersionSet, AbstractIndex, AbstractSchemaContent, IndexSet, library, Ref
 from sefaria.datatype.jagged_array import JaggedTextArray, JaggedIntArray
 from sefaria.system.exceptions import InputError, BookNameError
 from sefaria.system.cache import delete_template_cache
-
+try:
+    from sefaria.settings import USE_VARNISH
+except ImportError:
+    USE_VARNISH = False
 '''
 old count docs were:
     c["allVersionCounts"]
@@ -64,6 +67,10 @@ and now self.content is:
         "_he": ...
         "_all" {
             "availableTexts":
+            "shape":
+                For depth 1: Integer - length
+                For depth 2: List of chapter lengths
+                For depth 3: List of list of chapter lengths?
         }
     }
 
@@ -82,18 +89,18 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
     ]
     optional_attrs = [
         "flags",
-        "linksCount"
-        #"categories",
+        "linksCount",
+        "first_section_ref"
     ]
 
     langs = ["en", "he"]
     lang_map = {lang: "_" + lang for lang in langs}
     lang_keys = lang_map.values()
 
-    def __init__(self, index=None, attrs=None):
+    def __init__(self, index=None, attrs=None, proj=None):
         """
         :param index: Index record or name of Index
-        :type index: text.Index|text.CommentaryIndex|string
+        :type index: text.Index|string
         :return:
         """
         super(VersionState, self).__init__(attrs)
@@ -101,25 +108,27 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
         if not index:  # so that basic model tests can run
             if getattr(self, "title", None):
                 try:
-                    self.index = get_index(self.title)
+                    self.index = library.get_index(self.title)
                 except BookNameError as e:
                     logger.warning(u"Failed to load Index for VersionState - {}: {} (Normal on Index name change)".format(self.title, e))
             return
 
         if not isinstance(index, AbstractIndex):
             try:
-                index = get_index(index)
+                index = library.get_index(index)
             except BookNameError as e:
-                logger.warning("Failed to load Index for VersionState {}: {}".format(index, e))
+                logger.warning(u"Failed to load Index for VersionState {}: {}".format(index, e))
+                raise
 
         self.index = index
         self._versions = {}
         self.is_new_state = False
 
-        if not self.load({"title": index.title}):
+        if not self.load({"title": index.title}, proj=proj):
+            if not getattr(self, "flags", None):  # allow flags to be set in initial attrs
+                self.flags = {}
             self.content = self.index.nodes.create_content(lambda n: {})
             self.title = index.title
-            self.flags = {}
             self.refresh()
             self.is_new_state = True  # variable naming: don't override 'is_new' - a method of the superclass
 
@@ -137,17 +146,48 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
             self._load_versions()
         return self._versions.get(lang)
 
+    def _first_section_ref(self):
+        if not getattr(self, "index", False):
+            return None
+
+        current_leaf = self.index.nodes.first_leaf()
+        new_section = None
+
+        while current_leaf:
+            if not current_leaf.is_virtual:    # todo: handle first entries of virtual nodes
+                r = current_leaf.ref()
+                c = self.state_node(current_leaf).ja("all")
+                new_section = c.next_index([])
+                if new_section:
+                    break
+            current_leaf = current_leaf.next_leaf()
+
+        if not new_section:
+            return None
+
+        depth_up = 0 if current_leaf.depth == 1 else 1
+
+        d = r._core_dict()
+        d["toSections"] = d["sections"] = [(s + 1) for s in new_section[:-depth_up]]
+        return Ref(_obj=d)
+
     def refresh(self):
         if self.is_new_state:  # refresh done on init
             return
         self.content = self.index.nodes.visit_content(self._content_node_visitor, self.content)
         self.index.nodes.visit_structure(self._aggregate_structure_state, self)
         self.linksCount = link.LinkSet(Ref(self.index.title)).count()
+        fsr = self._first_section_ref()
+        self.first_section_ref = fsr.normal() if fsr else None
         self.save()
 
-    def get_flag(self, flag):
-        return self.flags.get(flag, None)
+        if USE_VARNISH:
+            from sefaria.system.varnish.wrapper import invalidate_counts
+            invalidate_counts(self.index)
 
+    def get_flag(self, flag):
+        return self.flags.get(flag, False) # consider all flags False until set True
+        
     def set_flag(self, flag, value):
         self.flags[flag] = value  # could use mongo level $set to avoid doc load, for speedup
         delete_template_cache("texts_dashboard")
@@ -169,22 +209,20 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
         #This does not account for relative importance/size of children
         #todo: revisit this algorithm when there are texts in the system.
 
-        ckeys = [child.key for child in snode.children]
+        ckeys = [child.key for child in snode.concrete_children()]
         for lkey in self.lang_keys:
             contents[lkey] = {
                 "percentAvailable": sum([contents[ckey][lkey]["percentAvailable"] for ckey in ckeys]) / len(ckeys),
                 "textComplete": all([contents[ckey][lkey]["textComplete"] for ckey in ckeys]),
                 'completenessPercent': sum([contents[ckey][lkey]["completenessPercent"] for ckey in ckeys]) / len(ckeys),
                 'percentAvailableInvalid': any([contents[ckey][lkey]["percentAvailableInvalid"] for ckey in ckeys]),
-                'sparseness': sum([contents[ckey][lkey]["sparseness"] for ckey in ckeys]) / len(ckeys),  # should be an int.  In Python 3 may need to int(round()) the result.
             }
-
 
     #todo: do we want to use an object here?
     def _content_node_visitor(self, snode, *contents, **kwargs):
         """
         :param snode: SchemaContentNode
-        :param contents: Array of two nodes - the current self.nodes node, and the self.counts node
+        :param contents: Array of one node - the self.counts node
         :param kwargs:
         :return:
         """
@@ -193,7 +231,6 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
         depth = snode.depth  # This also acts as an assertion that we have a SchemaContentNode
         ja = {}  # JaggedIntArrays for each language and 'all'
         padded_ja = {}  # Padded JaggedIntArrays for each language
-
 
         # Get base counts for each language
         for lang, lkey in self.lang_map.items():
@@ -205,8 +242,10 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
         # Sum all of the languages
         ja['_all'] = reduce(lambda x, y: x + y, [ja[lkey] for lkey in self.lang_keys])
         zero_mask = ja['_all'].zero_mask()
-        current["_all"] = {"availableTexts": ja['_all'].array()}
-
+        current["_all"] = {
+            "availableTexts": ja['_all'].array(),
+            "shape": ja['_all'].shape()
+        }
         # Get derived data for all languages
         for lang, lkey in self.lang_map.items():
             # build zero-padded count ("availableTexts")
@@ -243,37 +282,6 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
             # What percent complete? ('completenessPercent')
             # are we doing this with the zero-padded array on purpose?
             current[lkey]['completenessPercent'] = self._calc_text_structure_completeness(depth, current[lkey]["availableTexts"])
-
-            # a rating integer (from 1-4) of how sparse the text is. 1 being most sparse and 4 considered basically ok.
-            # ('sparseness') was ('isSparse')
-            if current[lkey]['percentAvailableInvalid']:
-                percentCalc = current[lkey]['completenessPercent']
-            else:
-                percentCalc = current[lkey]['percentAvailable']
-
-            lang_flag = "%sComplete" % lang
-            if getattr(self, "flags", None) and self.flags.get(lang_flag, False):  # if manually marked as complete, consider it complete
-                current[lkey]['sparseness'] = 4
-
-            # If it's a commentary, it might have many empty places, so just consider bulk amount of text
-            elif (snode.index.is_commentary()
-                  and len(current[lkey]["availableCounts"])
-                  and current[lkey]["availableCounts"][-1] >= 300):
-                current[lkey]['sparseness'] = 2
-
-            # If it's basic count is under a given constant (e.g. 25) consider sparse.
-            # This will casues issues with some small texts.  We fix this with manual flags.
-            elif len(current[lkey]["availableCounts"]) and current[lkey]["availableCounts"][-1] <= 25:
-                current[lkey]['sparseness'] = 1
-
-            elif percentCalc <= 15:
-                current[lkey]['sparseness'] = 1
-            elif 15 < percentCalc <= 50:
-                current[lkey]['sparseness'] = 2
-            elif 50 < percentCalc <= 90:
-                current[lkey]['sparseness'] = 3
-            else:
-                current[lkey]['sparseness'] = 4
 
         return current
 
@@ -335,61 +343,67 @@ class VersionState(abst.AbstractMongoRecord, AbstractSchemaContent):
 class VersionStateSet(abst.AbstractMongoSet):
     recordClass = VersionState
 
-    def all_refs(self):
-        refs = []
-        for vs in self:
-            try:
-                content_nodes = vs.index.nodes.get_leaf_nodes()
-            except Exception as e:
-                logger.warning(u"Failed to find VersionState Index while generating references for {}. {}".format(vs.title, e.message))
-                continue
-            for c in content_nodes:
-                try:
-                    state_ja = vs.state_node(c).ja("all")
-                    for indxs in state_ja.non_empty_sections():
-                        sections = [a + 1 for a in indxs]
-                        refs += [Ref(
-                            _obj={
-                                "index": vs.index,
-                                "book": vs.index.nodes.full_title("en"),
-                                "type": vs.index.categories[0],
-                                "index_node": c,
-                                "sections": sections,
-                                "toSections": sections
-                            }
-                        )]
-                except Exception as e:
-                    logger.warning(u"Failed to generate references for {}, section {}. {}".format(c.full_title("en"), ".".join([str(s) for s in sections]) if sections else "-", e.message))
-        return refs
-
 
 class StateNode(object):
     lang_map = {lang: "_" + lang for lang in ["he", "en", "all"]}
     lang_keys = lang_map.values()
-
+    meta_proj = {'content._all.completenessPercent': 1,
+         'content._all.percentAvailable': 1,
+         'content._all.percentAvailableInvalid': 1,
+         'content._all.textComplete': 1,
+         'content._en.completenessPercent': 1,
+         'content._en.percentAvailable': 1,
+         'content._en.percentAvailableInvalid': 1,
+         'content._en.textComplete': 1,
+         'content._he.completenessPercent': 1,
+         'content._he.percentAvailable': 1,
+         'content._he.percentAvailableInvalid': 1,
+         'content._he.textComplete': 1,
+         'flags': 1,
+         'linksCount': 1,
+         'title': 1,
+         'first_section_ref': 1}
     #todo: self.snode could be a SchemaNode, but get_available_counts_dict() assumes JaggedArrayNode
-    def __init__(self, title=None, snode=None, _obj=None):
+    def __init__(self, title=None, snode=None, _obj=None, meta=False, hint=None):
+        """
+        :param title:
+        :param snode:
+        :param _obj:
+        :param meta: If true, returns only the overview information, and not the detailed counts
+        :param hint: hint - a list of (lang, key) tuples of pieces of VersionState to return
+        :return:
+        """
         if title:
             snode = library.get_schema_node(title)
             if not snode:
-                snode = library.get_schema_node(title, with_commentary=True)
+                snode = library.get_schema_node(title)
             if not snode:
                 raise InputError(u"Can not resolve name: {}".format(title))
+            if snode.is_default():
+                snode = snode.parent
+        if snode:
+            proj = None
+            if meta:
+                if snode.parent:
+                    raise Exception("StateNode.meta() only supported for Index roots.  Called with {} / {}".format(title, snode.primary_title("en")))
+                proj = self.meta_proj
+            if hint:
+                hint_proj = {}
+                base = [VersionState.content_attr] + snode.version_address()
+                for l, k in hint:
+                    hint_proj[".".join(base + [self.lang_map[l]] + [k])] = 1
+                if proj:
+                    proj.update(hint_proj)
+                else:
+                    proj = hint_proj
             self.snode = snode
-            self.versionState = VersionState(snode.index.title)
-            self.d = self.versionState.content_node(snode)
-        elif snode:
-            self.snode = snode
-            self.versionState = VersionState(snode.index.title)
+            self.versionState = VersionState(snode.index.title, proj=proj)
             self.d = self.versionState.content_node(snode)
         elif _obj:
             self.d = _obj
 
     def get_percent_available(self, lang):
         return self.var(lang, "percentAvailable")
-
-    def get_sparseness(self, lang):
-        return self.var(lang, "sparseness")
 
     def get_available_counts(self, lang):
         return self.var(lang, "availableCounts")
@@ -413,7 +427,10 @@ class StateNode(object):
         return d
 
     def var(self, lang, key):
-        return self.d[self.lang_map[lang]][key]
+        try:
+            return self.d[self.lang_map[lang]][key]
+        except Exception as e:
+            raise e.__class__(u"Failed in StateNode.var(), in node: {}, language: {}, key: {}".format(self.snode.primary_title("en"), lang, key))
 
     def ja(self, lang, key="availableTexts"):
         """
@@ -459,41 +476,22 @@ def refresh_all_states():
     for index in indices:
         logger.debug(u"Rebuilding state for {}".format(index.title))
         try:
-            if index.is_commentary():
-                c_re = "^{} on ".format(index.title)
-                texts = VersionSet({"title": {"$regex": c_re}}).distinct("title")
-                for text in texts:
-                    VersionState(text).refresh()
-            else:
-                VersionState(index).refresh()
+            VersionState(index).refresh()
         except Exception as e:
             logger.warning(u"Got exception rebuilding state for {}: {}".format(index.title, e))
-            
 
-    import sefaria.summaries as summaries
-    summaries.update_summaries()
+    library.rebuild_toc()
 
 
 def process_index_delete_in_version_state(indx, **kwargs):
     from sefaria.system.database import db
-    db.vstate.remove({"title": indx.title})
-
+    db.vstate.delete_one({"title": indx.title})
 
 def process_index_title_change_in_version_state(indx, **kwargs):
-
     VersionStateSet({"title": kwargs["old"]}).update({"title": kwargs["new"]})
-    if indx.is_commentary():  # and "commentaryBook" not in d:  # looks useless
-        commentator_re = "^(%s) on " % kwargs["old"]
-    else:
-        commentators = IndexSet({"categories.0": "Commentary"}).distinct("title")
-        commentator_re = r"^({}) on {}".format("|".join(commentators), kwargs["old"])
-    old_titles = VersionStateSet({"title": {"$regex": commentator_re}}).distinct("title")
-    old_new = [(title, title.replace(kwargs["old"], kwargs["new"], 1)) for title in old_titles]
-    for pair in old_new:
-        VersionStateSet({"title": pair[0]}).update({"title": pair[1]})
 
 
 def create_version_state_on_index_creation(indx, **kwargs):
-    if indx.is_commentary():
-        return
-    VersionState(indx.title).save()
+    vs = VersionState(indx.title)
+    if vs.is_new_state:
+        vs.save()

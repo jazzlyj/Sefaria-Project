@@ -35,3 +35,18 @@ class DuplicateRecordError(InputError):
 
 class IndexSchemaError(InputError):
     pass
+
+class NoVersionFoundError(InputError):
+    pass
+
+
+class DictionaryEntryNotFoundError(InputError):
+    def __init__(self, message, lexicon_name=None, base_title=None, word=None):
+        super(DictionaryEntryNotFoundError, self).__init__(message)
+        self.lexicon_name = lexicon_name
+        self.base_title = base_title
+        self.word = word
+
+
+class SheetNotFoundError(InputError):
+    pass

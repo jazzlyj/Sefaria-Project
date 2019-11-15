@@ -1,4 +1,4 @@
-from sefaria.utils.hebrew import encode_hebrew_numeral
+from sefaria.utils.hebrew import encode_hebrew_numeral, encode_small_hebrew_numeral
 
 
 #Overlapping with AddressTalmud.toString()
@@ -18,9 +18,9 @@ def section_to_daf(section, lang="en"):
 
     elif lang == "he":
         if section > daf * 2:
-            daf = u"{}{}".format(encode_hebrew_numeral(daf, punctuation=False), ':')
+            daf = u"{}{}".format(sanitize(encode_small_hebrew_numeral(daf), False) if daf < 1200 else encode_hebrew_numeral(daf, punctuation=False), ':')
         else:
-            daf = u"{}{}".format(encode_hebrew_numeral(daf, punctuation=False), '.')
+            daf = u"{}{}".format(sanitize(encode_small_hebrew_numeral(daf), False) if daf < 1200 else encode_hebrew_numeral(daf, punctuation=False), '.')
 
     return daf
 
@@ -36,12 +36,9 @@ def daf_to_section(daf):
     return section
 
 
-def parse_daf_string(daf):
-    """
-    Take a string representing a daf ('55', amud ('55b')
-    or a line on a daf ('55b:2') and return of list parsing it in
-    ints.
-
-    '2a' -> [3], '2a:4' -> [3, 4]
-    """
-    return []
+def amud_ref_to_daf_ref(ref):
+    """ Take an amud "a" reference and converts it to a daf reference """
+    next = ref.next_section_ref()
+    if next is None:
+        return ref
+    return ref.to(next)

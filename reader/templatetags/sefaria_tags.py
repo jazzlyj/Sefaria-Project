@@ -6,19 +6,23 @@ import json
 import re
 import dateutil.parser
 import urllib
+import math
 from urlparse import urlparse
-
+from datetime import datetime
 from django import template
 from django.template.defaultfilters import stringfilter
 from django.utils.safestring import mark_safe
 from django.core.serializers import serialize
 from django.db.models.query import QuerySet
 from django.contrib.sites.models import Site
+from django.contrib.auth.models import Group
+from django.utils.translation import ugettext as _
 
 from sefaria.sheets import get_sheet
-from sefaria.utils.users import user_link as ulink
+from sefaria.model.user_profile import user_link as ulink, user_name as uname, public_user_data
+from sefaria.model.text import Version
 from sefaria.utils.util import strip_tags as strip_tags_func
-from sefaria.utils.hebrew import hebrew_plural, hebrew_term
+from sefaria.utils.hebrew import hebrew_plural, hebrew_term, hebrew_parasha_name
 from sefaria.utils.hebrew import hebrew_term as translate_hebrew_term
 
 import sefaria.model.text
@@ -89,35 +93,76 @@ def he_ref(value):
 
 	return he
 
+
 @register.filter(is_safe=True)
 @stringfilter
 def he_parasha(value):
 	"""
-	Returns a Hebrew ref for the english ref passed in.
+	Returns a Hebrew parsha name for the english parsha name passed in.
 	"""
-	if not value:
-		return ""
-	
-	def hebrew_parasha(p):
-		try:
-			term    = m.Term().load({"name": p, "scheme": "Parasha"})
-			parasha = term.get_titles(lang="he")[0]
-		except Exception, e:
-			print e
-			parasha   = p
-		return parasha
-	names = value.split("-")
-	return ("-").join(map(hebrew_parasha, names)) if value != "Lech-Lecha" else hebrew_parasha(value)
+	return hebrew_parasha_name(value)
+
+
+@register.filter(is_safe=True)
+@stringfilter
+def he_version(value):
+	"""
+	Returns the Hebrew translation of a version title, if it exists.
+	"""
+	version = Version().load({"versionTitle": value})
+	if not version:
+		return value
+	return getattr(version, "versionTitleInHebrew", value)
 
 
 @register.filter(is_safe=True)
 def version_link(v):
 	"""
-	Return an <a> tag linking to the first availabe text of a particular version.
+	Return an <a> tag linking to the first available text of a particular version.
 	"""
-	section = "1"
-	link = u'<a href="/{}.{}/{}/{}">{}</a>'.format(v.title, section, v.language, v.versionTitle.replace(" ", "_"), v.versionTitle)
+	try:
+		section_ref = v.first_section_ref() or v.get_index().nodes.first_leaf().first_section_ref()
+	except IndexError:
+		try:
+			section_ref = v.get_index().nodes.first_leaf().first_section_ref()
+		except:  # Better if we knew how this may fail...
+			return mark_safe(u'<a href="/{}.1/{}/{}">{}</a>'.format(v.title, v.language, urllib.quote(v.versionTitle.replace(" ", "_").encode("utf-8")), v.versionTitle))
+
+	link = u'<a href="/{}/{}/{}">{}</a>'.format(section_ref.url(), v.language, urllib.quote(v.versionTitle.replace(" ", "_").encode("utf-8")), v.versionTitle)
 	return mark_safe(link)
+
+
+@register.filter(is_safe=True)
+def text_toc_link(indx):
+	"""
+	Return an <a> tag linking to the text TOC for the Index
+	"""
+	from sefaria.model.text import library, AbstractIndex
+	if not isinstance(indx, AbstractIndex):
+		indx = library.get_index(indx)
+
+	en = indx.nodes.primary_title("en")
+	he = indx.nodes.primary_title("he")
+	link = u'<a href="/{}"><span class="int-en">{}</span><span class="int-he">{}</span></a>'.format(indx.title, en, he)
+	return mark_safe(link)
+
+
+@register.filter(is_safe=True)
+def person_link(person):
+	"""
+	Return an <a> tag linking to a person page.
+	"""
+	link = u'<a href="/person/{}"><span class="int-en">{}</span><span class="int-he">{}</span></a>'.format(person.key, person.primary_name("en"), person.primary_name("he"))
+	return mark_safe(link)
+
+
+@register.filter(name='has_group')
+def has_group(user, group_name):
+	try:
+		group =  Group.objects.get(name=group_name)
+		return group in user.groups.all()
+	except:
+		return False
 
 
 @register.filter(is_safe=True)
@@ -126,7 +171,7 @@ def version_source_link(v):
 	Return an <a> tag linking to the versionSource, or to a Google Search for the source.
 	"""
 	if " " in v.versionSource or "." not in v.versionSource:
-		href       = "http://www.google.com/search?q=" + urllib.quote(v.versionSource.encode('utf8'))
+		href       = "https://www.google.com/search?q=" + urllib.quote(v.versionSource.encode('utf8'))
 		val        = v.versionSource
 	else:
 		parsed_uri = urlparse( v.versionSource )
@@ -155,17 +200,35 @@ def normalize_url(value):
 		value = 'http://' + value
 	return value
 
+
 @register.filter(is_safe=True)
 def user_link(uid):
 	return mark_safe(ulink(uid))
 
 
 @register.filter(is_safe=True)
+def user_name(uid):
+	return mark_safe(uname(uid))
+
+
+@register.filter(is_safe=True)
+def user_message_path(uid):
+	"""Returns the relative path to send a message to `uid`"""
+	data = public_user_data(uid)
+	return mark_safe(data["profileUrl"] + "?message=1")
+
+
+@register.filter(is_safe=True)
+def group_link(group_name):
+	return mark_safe("<a href='/groups/%s'>%s</a>" % (group_name.replace(" ", "_"), group_name))
+
+
+@register.filter(is_safe=True)
 def lang_code(code):
 	codes = {
-		"en": "English",
-		"he": "Hebrew",
-		"bi": "Bilingual",
+		"en": _("English"),
+		"he": _("Hebrew"),
+		"bi": _("Bilingual"),
 	}
 	return codes.get(code, "Unknown Language")
 
@@ -174,9 +237,9 @@ def lang_code(code):
 def text_category(text):
 	"""Returns the top level category for text"""
 	try:
-		i = m.get_index(text)
+		i = m.library.get_index(text)
 		result = mark_safe(getattr(i, "categories", ["[no cats]"])[0])
-	except: 
+	except:
 		result = "[text not found]"
 	return result
 
@@ -196,6 +259,16 @@ def strip_tags(value):
 	Returns the given HTML with all tags stripped.
 	"""
 	return mark_safe(strip_tags_func(value))
+
+
+@register.filter(is_safe=True)
+def escape_quotes(value):
+	"""
+	Returns the given HTML with single and double quotes escpaed with \ for a JS context
+	"""
+	value = value.replace("'", "\\'")
+	value = value.replace('"', '\\"')
+	return mark_safe(value)
 
 
 @register.filter(is_safe=True)
@@ -241,8 +314,18 @@ def absolute_link(value):
 	<a href='/Job.3.4'>Job 3:4</a> --> <a href='http://www.sefaria.org/Job.3.4'>Job 3:4</a>
 	"""
 	# run twice to account for either single or double quotes
-	absolute = value.replace("href='/", "href='http://%s/" % domain)
-	absolute = absolute.replace('href="/', 'href="http://%s/' % domain)
+	absolute = value.replace("href='/", "href='https://%s/" % domain)
+	absolute = absolute.replace('href="/', 'href="https://%s/' % domain)
+	return mark_safe(absolute)
+
+
+@register.filter(is_safe=True)
+def absolute_url(value):
+	"""
+	Takes a string with path starting with "/" and returls url with domain and protocol.
+	"""
+	# run twice to account for either single or double quotes
+	absolute = "https://%s%s" % (domain, value)
 	return mark_safe(absolute)
 
 
@@ -291,10 +374,10 @@ def abbreviate_number(value):
 
 	if n > 1000000000:
 		abbr = "%dB" % ( n / 1000000000 )
-	
+
 	elif n > 1000000:
 		abbr = "%dM" % ( n / 1000000 )
-	
+
 	elif n > 1000:
 		abbr = "%dk" % ( n / 1000 )
 
@@ -345,3 +428,103 @@ def get_private_attribute(model_instance, attrib_name):
 @register.filter(is_safe=True)
 def nice_timestamp(timestamp):
 	return dateutil.parser.parse(timestamp).strftime("%m/%d/%y")
+
+
+# Derived from https://djangosnippets.org/snippets/6/
+"""
+Template tags for working with lists.
+
+You'll use these in templates thusly::
+
+	{% load listutil %}      # I don't think we need this line.
+	{% for sublist in mylist|parition:"3" %}
+		{% for item in mylist %}
+			do something with {{ item }}
+		{% endfor %}
+	{% endfor %}
+"""
+@register.filter
+def partition_into(thelist, n):
+	"""
+	Break a list into ``n`` pieces. The last list may be larger than the rest if
+	the list doesn't break cleanly. That is::
+
+		>>> l = range(10)
+
+		>>> partition(l, 2)
+		[[0, 1, 2, 3, 4], [5, 6, 7, 8, 9]]
+
+		>>> partition(l, 3)
+		[[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]]
+
+		>>> partition(l, 4)
+		[[0, 1], [2, 3], [4, 5], [6, 7, 8, 9]]
+
+		>>> partition(l, 5)
+		[[0, 1], [2, 3], [4, 5], [6, 7], [8, 9]]
+
+	"""
+	try:
+		n = int(n)
+		thelist = list(thelist)
+	except (ValueError, TypeError):
+		return [thelist]
+	p = len(thelist) / n
+	return [thelist[p*i:p*(i+1)] for i in range(n - 1)] + [thelist[p*(i+1):]]
+
+
+@register.filter
+def partition_by(thelist, n):
+	"""
+	Break a list into ``n`` sized peices
+	``partition_by(range(10), 3)`` gives::
+
+		[[1, 4, 7],
+		 [2, 5, 8],
+		 [3, 6, 9],
+		 [10]]
+
+	"""
+	try:
+		n = int(n)
+		thelist = list(thelist)
+	except (ValueError, TypeError):
+		return [thelist]
+	rows = int(math.ceil(float(len(thelist)) / n))
+	newlists = [thelist[r * n : (r + 1) * n] for r in range(rows)]
+	return newlists
+
+
+@register.filter
+def partition_vertical(thelist, n):
+	"""
+	Break a list into ``n`` peices, but "horizontally." That is,
+	``partition_horizontal(range(10), 3)`` gives::
+
+		[[1, 4, 7],
+		 [2, 5, 8],
+		 [3, 6, 9],
+		 [10]]
+
+	Clear as mud?
+	"""
+	try:
+		n = int(n)
+		thelist = list(thelist)
+	except (ValueError, TypeError):
+		return [thelist]
+	newlists = [list() for i in range(n)]
+	for i, val in enumerate(thelist):
+		newlists[i%n].append(val)
+	return newlists
+
+
+@register.filter
+def date_string_to_date(dateString):
+    return(datetime.strptime(dateString, "%Y-%m-%dT%H:%M:%S.%f"))
+
+
+@register.filter(is_safe=True)
+def sheet_via_absolute_link(sheet_id):
+    return mark_safe(absolute_link(
+		'<a href="/sheets/{}">a sheet</a>'.format(sheet_id)))

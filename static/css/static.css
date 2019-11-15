@@ -1,0 +1,1826 @@
+.wrapper{
+  background-color: #FBFBFA;
+}
+.container{
+  width: 100%;
+}
+.interface-hebrew .static {
+  direction:rtl;
+}
+.static {
+  font-size: 16px;
+  background-color: #FBFBFA;
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+.static .inner {
+  width: 90%;
+  max-width: 660px;
+  margin: 0 auto;
+  padding: 140px 0 100px;
+}
+#register.static .inner {
+  width: 302px;
+}
+.static .int-he {
+  font-family: "Heebo", "Helvetica Neue", Helvetica, Ariel, sans-serif;
+}
+.static .control-elem, .static .control-elem .int-en{
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.static .control-elem .int-he {
+  font-family: "Heebo", sans-serif;
+}
+.static .control-elem .int-bi {
+  font-family: "Roboto", "Heebo", "Helvetica Neue", Ariel, sans-serif;
+}
+.static .sans .int-en, .static.sans .int-en, .static .sans {
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.static .sans .int-he, .static.sans .int-he  {
+  font-family: "Heebo", sans-serif;
+}
+.interface-english .static .int-he {
+  display: none;
+}
+.interface-hebrew .static .int-en {
+  display: none;
+}
+.static h2,
+.static h3,
+.static h4,
+.static h2 .int-en,
+.static h3 .int-en,
+.static h4 .int-en {
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.interface-hebrew h1,
+.interface-hebrew h2,
+.interface-hebrew h3,
+.interface-hebrew h4,
+.static h1 .int-he,
+.static h2 .int-he, 
+.static h3 .int-he, 
+.static h4 .int-he {
+  font-family: "Heebo", sans-serif;
+}
+.static h1 {
+  position: relative;
+  font-weight: lighter;
+  letter-spacing: 1px;
+  text-align: center;
+  font-size: 30px;
+  margin: 0 0 60px 0;
+  height: auto;
+}
+.static h1 .int-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+.static h2 {
+  font-weight: lighter;
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #666;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+.static h3 {
+  font-weight: normal;
+  text-transform: uppercase;
+  color: #aaa;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  margin-top: 40px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+.static p {
+  margin: initial;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.static p a {
+  text-decoration: underline;
+}
+.static .section {
+  margin-bottom: 30px;
+}
+.static input {
+  padding: 20px 20px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 7px;
+  box-shadow: 0px 1px 3px rgba(0,0,0,0.2);
+  border: none;
+  color: #666;
+  font-size: 14px;
+  background-color: white;
+}
+.static input:focus {
+  outline: none;
+}
+.static input::placeholder { /* eventual spec? */
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.static input::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.static input::-moz-placeholder { /* Firefox 19+ */
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.static input:-ms-input-placeholder { /* IE 10+ */
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+.static input:-moz-placeholder { /* Firefox 18- */
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+
+
+.static a {
+  color: #333;
+}
+.static a.button, .static .button a, .static a .button {
+  color: white;
+  text-decoration: none;
+}
+.static a.button.white, .static .button.white a, .static a .button.white {
+  color: #333;
+}
+.static a.button.transparent {
+  color: #666;
+}
+
+.static .refLink {
+  text-decoration: none;
+}
+.static .refLink:hover {
+  text-decoration: underline;
+}
+.static label {
+  color: #999;
+  letter-spacing: 1px;
+  font-size: 16px;
+  height: 18px;
+  margin-bottom: 10px;
+  position: relative;
+}
+.static label .sub {
+  font-size: 12px;
+  color: #999;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+.static label .int-en .sub{
+  margin-left: 4px;
+}
+.static label .int-he .sub{
+  margin-right: 4px;
+}
+.static .page-title{
+  margin-bottom: 50px;
+}
+.static label.button {
+  height: auto;
+}
+.static .row{
+
+}
+.static .error {
+  color: red;
+}
+.static .inner div.single-button a.button{
+  margin: auto;
+}
+.static .inner .button {
+  border-radius: 7px;
+  padding: 16px 24px;
+  cursor: pointer;
+  font-size: 15px;
+  letter-spacing: 1px;
+  box-sizing: border-box;
+  text-align: center;
+}
+.static .inner .button.big {
+  width: 250px;
+}
+.static .inner .button.blue {
+  background-color: #212E50;
+  border: 1px solid #212E50;
+  color: white;
+}
+.static img.fullWidth {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 30px 0;
+  border: 1px solid #ddd;
+}
+.static p.tagline {
+  font-style: italic;
+  margin-bottom: 25px;
+}
+.static h1 p.tagline {
+  margin-top: 25px;
+  margin-bottom: 0px;
+}
+.static-text {
+  margin: 0;
+  text-align: justify
+}
+.static .quotation {
+  text-align: center;
+  font-weight: bold;
+  color: #666;
+}
+
+.static .quotation a {
+  color: #666;
+}
+
+.static .quotation he {
+  font-family: frank ruehl libre,taamey frank,times new roman,serif;
+}
+.static .quotation int-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#homePage {
+  overflow: hidden;
+  color: #333;
+  background-color: transparent;
+}
+#homePage .section {
+  margin-bottom: 0;
+}
+#homePage #homeCover {
+  height: 560px;
+  padding: 180px 0;
+  background-color: #ADA99B;
+  box-sizing: border-box;
+  text-align: center;
+  overflow: hidden;
+  position: relative;
+}
+#homeCover #homeVideo {
+  position: absolute;
+  top: -90px;
+  left: 0;
+  width: 100%;
+  min-width: 1200px;
+  z-index: 0;
+}
+#homePage #homeCover h1.featureTitle {
+  color: white;
+  height: 70px;
+  margin-bottom: 20px;
+}
+#homePage #homeCover h1.featureTitle .int-en,
+#homePage #homeCover h1.featureTitle .int-he {
+  color: white;
+}
+#homePage #homeCover .sub {
+  color: white;
+  font-size: 18px;
+  margin: 0;
+  position: relative;
+}
+#homePage #homeCover .sub a {
+  font-size: 18px;
+}
+#homePage #homeCover .sub .int-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#homePage #homeCover a {
+  color: white;
+  font-style: normal;
+  position: relative;
+}
+#homePage #homeCover .button {
+  margin-top: 80px;
+  padding: 16px 30px;
+}
+#homePage .section {
+  overflow: hidden;
+  padding: 100px 0;
+}
+#homePage .sectionInner {
+  width: 750px;
+  max-width: 94%;
+  margin: auto; 
+}
+#homePage .section:nth-child(even) {
+  background-color: #FBFBFA;
+}
+#homePage .section:nth-child(odd) {
+  background-color: white;
+}
+#homePage .textBox {
+  display: inline-block;
+  width: 380px;
+}
+#homePage .imageBox {
+  display: inline-block;
+  width: 300px;
+  text-align: center;
+}
+#homePage .imageBox img {
+  max-width: 100%;
+}
+@media screen and (max-width: 700px) {
+  #homePage .sectionInner {
+    width: 350px;
+  }
+  #homePage .textBox, #homePage .imageBox {
+    max-width: 100%;
+    margin: 0 auto;
+    float: none !important;
+  }
+  #homePage .imageBox {
+    margin-top: 20px;
+  }
+}
+#homePage .imageBox.bordered {
+  border: 1px solid #ccc;
+}
+#homePage .imageBox.bordered img {
+  display: block;
+}
+#homePage .textLeft .textBox {
+  float: left;
+}
+#homePage .textLeft .imageBox {
+  float: right;
+}
+#homePage .textRight .textBox {
+  float: right;
+}
+#homePage .textRight .imageBox {
+  float: left;
+}
+#homePage .section a .button {
+  display: block;
+  width: 250px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+#homePage .section .button .fa {
+  color: #ccc;
+  font-size: 25px;
+}
+#homePage .section.center {
+  text-align: center;
+}
+#homePage .section.center .button {
+  margin: 0 auto;
+}
+#homePage h2 .int-en{
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#homePage h2 {
+  margin: 0 0 12px 0;
+  padding: 0;
+  font-size: 30px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  text-transform: none;
+  border: none;
+  color: #000;
+}
+#homePage h2 .int-he {
+  font-style: normal;
+}
+#homePage .description {
+  margin: 26px 0 34px 0;
+  line-height: 1.2;
+}
+#homePage .description .int-en,
+#homePage .description .int-he {
+  color: #666;
+}
+#homePage .description .int-he {
+  font-style: normal;
+}
+#homePage .dedication {
+  margin: -12px 0 34px;
+  color: #999;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.2;
+}
+#homePage .section .button {
+  margin: 0;
+  position: relative;
+}
+#homePage #homeBlog .blogTag {
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+  font-size: 15px;
+  font-weight: lighter;
+}
+#homePage #homeBlog .blogText {
+  font-size: 18px;
+  margin: 40px 0 40px;
+  line-height: 1.2;
+  text-align: justify;
+}
+#homePage a {
+  color: #999;
+  font-size: 16px;
+}
+#homePage a.refLink {
+  color: #000;
+  font-size: 18px;
+  padding: 12px 0px 15px;
+}
+#homePage a.refLink .int-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#homePage a.refLink .int-he {
+  font-family: "Frank Ruehl Libre", "Times New Roman", serif;
+}
+#homePage #homeProgress {
+  text-align: center;
+}
+#homeProgress h3 {
+  font-style: normal;
+  font-size: 16px;
+  font-weight: lighter;
+  letter-spacing: 1px;
+  color: #666;
+  margin-bottom: 20px;
+  border-bottom: none;
+  text-transform: uppercase;
+}
+#homeProgress .stat {
+  display: inline-block;
+  width: 32.9%;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 1px;
+  box-sizing: border-box;
+}
+#homeProgress .stat .statIcon,
+#homeProgress .stat .wordCount {
+  display: block;
+}
+#homeProgress img.statIcon {
+  margin: 20px auto;
+  text-align: center;
+}
+#homeProgress .fa.statIcon {
+  line-height: 70px;
+  font-size: 63px;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+#homeProgress .stat .wordCount {
+  font-size: 30px;
+  margin: 0px 0;
+}
+#homeProgress .stat .int-en {
+  color: #999;
+}
+#homeProgress .stat .int-he {
+  color: #999;
+}
+#homeProgress #moreMetrics {
+  display: block;
+  margin-top: 50px;
+}
+#homeHelp .description {
+  margin: 30px 0 40px;
+}
+#homeConnect h2 {
+  margin-bottom: 30px;
+}
+#homeConnect #mailingListTitle {
+  margin-bottom: 40px;
+  color: #999;
+  font-size: 14px;
+}
+#homeConnect #mailingListTitle .int-en {
+}
+#homeConnect #mailingListTitle .int-he {
+}
+#homeConnect #mailingListEmail {
+  padding: 14px 24px;
+  margin: -4px 8px 0 0;
+  width: 240px;
+  font-size: 16px;
+}
+#homeConnect #subscribeMsg {
+  margin-top: 40px;
+  font-size: 20px;
+  display: none;
+}
+#homePage #homeMobile .button{
+  display: flex;
+  display: -webkit-flex;
+  flex-direction: row;
+  -webkit-flex-direction: row;
+  padding: 12px 14px;
+  align-items: center;
+  -webkit-align-items: center;
+  -webkit-align-content: center; /* Safari */
+  align-content:         center;
+  -webkit-justify-content: space-between; /* Safari */
+  justify-content:         space-between;
+}
+#homePage #homeMobile a .button i:before
+{
+  text-decoration: none;
+  display: inline-block; /*so this does not inherit the underline from the parent a*/
+}
+#homePage #homeMobile .button .int-en {
+  margin-left: 15px;
+  margin-right: auto;
+}
+#homePage #homeMobile .button .int-he{
+  margin-right: 15px;
+  margin-left: auto;
+}
+#profilePage {
+}
+#profileTop {
+  text-align: center;
+}
+#profileImage {
+  border: 1px solid #E6E5E6;
+  width: 200px;
+  height: 200px;
+}
+#profileName {
+  margin: 20px 0 24px;
+}
+#profileTagline {
+  margin-bottom: 24px;
+  font-size: 18px;
+  color: #666;
+}
+#profileSnippets > div {
+  display: inline-block;
+  color: #999;
+  margin: 2px 7px;
+  font-size: 14px;
+  font-weight: lighter;
+}
+#profileSnippets a {
+  color: #999
+}
+#profilePage #buttons {
+  margin: 24px 0 50px;
+}
+#profilePage .sections {
+  margin-bottom: 50px;
+}
+#profilePage #bio {
+  font-size: 22px;
+}
+#profilePage #bio,
+#profilePage #bio p {
+  font-size: 16px;
+  line-height: 1.3;
+}
+#profilePage #bio a {
+  color: #333;
+}
+#profilePage ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+#profilePage li {
+}
+#profilePage .sheet {
+  margin: 26px 0;
+  font-size: 18px;
+  color: #333;
+}
+#profilePage .sheet a {
+  color: #333;
+}
+#activityList {
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+  color: #666;
+  padding: 0;
+}
+.interface-hebrew #activityList {
+  font-family: "Heebo", "Helvetica Neue", Helvetica, Ariel, san-serif;
+}
+#profileActivity a {
+  color: #333;
+  font-weight: normal;
+}
+#profilePage  #followMe span {
+  font-size: inherit;
+}
+#profilePage  .button span.int-en {
+}
+#profilePage  .button span.int-he {
+  font-size: inherit;
+}
+#profilePage #followMe.follow span.following {
+  display: none;
+}
+#profilePage #followMe.following span.follow {
+  display: none;
+}
+#profilePage #followMe span.unfollow {
+  display:none;
+}
+#profilePage #followMe.following:hover span.unfollow {
+  display:inherit;
+}
+#profilePage #followMe.following:hover span.following {
+  display:none;
+}
+#activityList .topline {
+  font-weight: normal;
+}
+#activityList .text.int-en, #activityList .text {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#activityList .text.int-he {
+  font-family: "Frank Ruehl Libre", "Times New Roman", serif;
+}
+#activityList .time {
+  color: #ccc;
+}
+#activityList li > :not(:first-child){
+  margin-top:5px;
+}
+#activityList li{
+  margin-bottom: 15px;
+  list-style-type: none;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+#activityList + a.page-link{
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+  font-size: 14px;
+}
+.registrationContent {
+  margin: 1% auto 0;
+  width: 320px;
+}
+.registrationContent label {
+  display: none;
+}
+.registrationContent input {
+  padding: 12px 20px;
+  height: initial;
+  margin: 1% 0px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+.registrationContent #id_subscribe_announce, .registrationContent #id_subscribe_educator {
+  width: auto;
+}
+.registrationContent .helptext {
+  font-size: 16px;
+  font-family: "Roboto", "Heebo", "Helvetica Neue", Ariel, sans-serif;
+  color: #000;
+}
+.registrationContent .g-recaptcha{
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.registrationContent #register-form p:nth-of-type(5){
+  padding-top: 10px;
+}
+.interface-hebrew input#id_email::-webkit-input-placeholder {
+  text-align: right;
+}
+input#id_email{
+  text-align: left;
+  direction: ltr;
+}
+.registrationContent button {
+  width: 100%;
+}
+.registrationContent a {
+}
+.registrationContent a.registration-links, .registrationContent p.registration-links{
+  margin-top: 20px;
+  display: block;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+  font-style: normal;
+  text-decoration: none;
+}
+.registrationContent a.registration-links:hover{
+  color: #666;
+}
+p.registration-links a{
+  color: #999;
+  text-decoration: none;
+}
+p.registration-links a:hover{
+  color: #666;
+  text-decoration: none;
+}
+#visualizationsPage {
+  text-align: left;
+}
+.interface-hebrew #visualizationsPage {
+  text-align: right;
+}
+#visualLibraryPage {
+  padding-top: 70px;
+}
+.static div.single-button {
+  margin: 5% 0;
+}
+.static div.single-button.center {
+  text-align: center;
+}
+#donatePage #donateOptions .donateOption {
+  margin-bottom: 35px;
+}
+#donatePage .faq p.question {
+  font-weight: bold;
+}
+#donatePage .faq p.answer {
+  margin-left: 40px;
+  text-indent: -20px;
+}
+#donatePage .faq p.question:before {
+  content: "Q)";
+}
+#donatePage .faq p.answer:before {
+  content: "A)";
+}
+.interface-hebrew #donatePage .faq p.answer{
+  margin-right: 40px;
+  text-indent: -20px;
+}
+.interface-hebrew #donatePage .faq p.question:before {
+  content: "ש)";
+  font-family: "Heebo", "Helvetica Neue", Helvetica, Ariel, san-serif;
+}
+.interface-hebrew #donatePage .faq p.answer:before {
+  content: "ת)";
+  font-family: "Heebo", "Helvetica Neue", Helvetica, Ariel, san-serif;
+}
+#supportersPage{
+  text-align: center;
+}
+#supportersPage .leading-supporters p.tagline:first-child {
+  text-align: center;
+  max-width: 500px;
+  margin: auto;
+}
+#supportersPage .leading-supporters p.tagline:last-child {
+  margin-top: 20px;
+}
+#supportersPage .supporters p.tagline:first-child {
+  margin-bottom: 20px;
+}
+#supportersPage .supporter .int-en{
+    font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#supportersPage h2 {
+    margin-top: 25px;
+}
+#supportersPage h2 span {
+  font-size: 1.3em;
+}
+#supportersPage .donate-link {
+  margin-top:20px;
+}
+#aboutPage {
+  margin: 0;
+  width: 100%;
+}
+#aboutPage .section {
+  margin-bottom: 60px;
+}
+#aboutPage p {
+  font-size: 16px;
+  margin-bottom: 30px;
+}
+#aboutPage .year {
+  margin-top: 30px;
+}
+#aboutPage .year.first {
+  margin-top: 0;
+}
+#aboutPage .historyItem {
+  font-size: 18px;
+  margin: 14px 0;
+  line-height: 1.2;
+}
+#donatePage pre{
+  all: initial;
+  display: block;
+  unicode-bidi: embed;
+  white-space: pre;
+  font-style: italic;
+  font-size: 1.2em;
+}
+.static-text .static-content-note {
+  margin: 60px 0;
+}
+.static-text .static-content-not > p:first-child {
+  font-weight: bold;
+}
+#linkExplorerPage {
+  padding-top: 60px;
+}
+#supportersPage p{
+  font-size: 16px;
+  color: #666;
+}
+#linkerPage h2 {
+  margin: 30px 0 30px 0;
+  font-size: 24px;
+  letter-spacing: 0;
+  padding-bottom: 0;
+  text-transform: none;
+  border: none;
+}
+#linkerPage img {
+  width: 100%;
+  margin: 30px 0 30px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+#linkerPage .buttonBox {
+  margin: 30px 0;
+  text-align: center;
+}
+#teamPage h2{
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #999;
+  text-align: center;
+  padding-bottom: 40px;
+}
+#teamPage .team-members, #teamPage .board-members{
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+#teamPage .teamMember, #teamPage .teamBoardMember {
+  font-size: 20px;
+  line-height: 1.2em;
+  display: inline-block;
+  margin-bottom: 35px;
+  padding-bottom: 35px;
+  margin-left: auto;
+  margin-right: auto;
+  /*width: 32%;*/
+}
+#teamPage .teamMember {
+  flex: 0 0 30%;
+}
+#teamPage .teamBoardMember {
+  border-bottom: none;
+  margin-bottom: 10px;
+  flex: 0 0 29%;
+}
+#teamPage .teamMember .teamMemberImage {
+  display: block;
+  /*float: left;*/
+}
+#teamPage .teamMember .teamMemberDetails, #teamPage .teamBoardMember .teamMemberDetails {
+  display: block;
+  margin: 20px 0px;
+  text-align: start;
+}
+#teamPage .teamBoardMember .teamMemberDetails {
+  margin: 0;
+}
+#teamPage .teamMember .teamMemberImage img {
+  border: 1px solid #E6E5E6;
+  width: 200px;
+  height: 200px;
+  vertical-align:middle;
+}
+#teamPage .teamMember .teamName, #teamPage .teamBoardMember .teamName {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #555;
+}
+#teamPage .teamMember .teamTitle, #teamPage .teamBoardMember .teamTitle {
+
+}
+#teamPage .teamMember .teamEmail {
+  color: #999;
+}
+#teamPage .teamMember .teamBio { 
+  margin-top: 20px;
+  white-space: normal;
+}
+#editProfilePage {
+  color: #666;
+}
+#editProfilePage .inner {
+  position: relative; 
+}
+#saveCancelButtons {
+  position: absolute;
+  top: 127px;
+  right: 0px;
+}
+#saveCancelButtons .button {
+  padding: 10px 16px;
+}
+#editProfilePage #profileBox,
+#editProfilePage #contactBox,
+#editProfilePage #sheetsBox,
+#editProfilePage #aboutBox {
+  margin-bottom: 60px;
+  display: flex;
+  display: -webkit-flex;
+  justify-content: space-between;
+  -webkit-justify-content:space-between;
+  flex-flow: row wrap;
+}
+#editProfilePage #sheetsBox{
+  flex-direction: column;
+  text-align: center;
+}
+#editProfilePage #aboutBox div, #editProfilePage #contactBox input{
+  border: 1px solid #bbb;
+}
+
+#editProfilePage h2 {
+  text-align: center;
+}
+#editProfilePage .field label{
+  padding-bottom: 10px;
+  display: block;
+}
+#editProfilePage input {
+  padding: 15px 12px;
+  border: none;
+}
+#editProfilePage #profilePictureBox img {
+  vertical-align: top;
+  float: left;
+  width: 80px;
+  height: 80px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+#editProfilePage #aboutBox {
+  /*margin-bottom: 12px;*/
+}
+#editProfilePage #bio {
+  width: 100%;
+  min-height: 100px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 3px;
+  padding: 10px 14px;
+  font-size: 18px;
+  background-color: white;
+}
+#editProfilePage .field {
+  margin-bottom: 20px;
+  width: 48%;
+  min-width: 300px;
+}
+#editProfilePage .field input {
+  width: 100%;
+  color: #333;
+  background-color: white;
+  box-sizing: border-box;
+}
+#editProfilePage ul {
+  list-style-type: none;
+  padding: 0px;
+  margin: 0px;
+}
+#editProfilePage #jewishEducation li {
+  position: relative;
+  margin: 8px 0;
+}
+#editProfilePage #jewishEducation li:first-child .remove {
+  display: none;
+}
+#editProfilePage #jewishEducation label{
+  display: inline-block;
+}
+#editProfilePage #addEducation {
+  font-size: 12px;
+  /*font-style: italic;*/
+  color: #555;
+  margin-top: 4px;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 4px;
+  padding: 15px 0px;
+  border: 1px solid #bbb;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#editProfilePage #addEducation:hover {
+  text-decoration: underline;
+  /*background-color: #bbb;*/
+}
+#editProfilePage #addEducation i{
+  padding: 0 5px;
+}
+#editProfilePage #addEducation:hover i:before{
+  display: inline-block;
+  text-decoration: none;
+}
+#editProfilePage #jewishEducation .remove {
+  position: absolute;
+  top: 15px;
+  cursor: pointer;
+}
+.interface-hebrew #editProfilePage #jewishEducation .remove{
+  left: 5px;
+}
+.interface-english #editProfilePage #jewishEducation .remove{
+  right: 5px;
+}
+#editProfilePage #sheetsBox #pinnedSheetsMessage {
+  margin-bottom: 4px;
+  font-style: italic;
+}
+#editProfilePage .sheetSet {
+  margin: 14px 0;
+}
+#editProfilePage #sheetsBox ul {
+  background: white;
+  border-radius: 3px;
+  border: none;
+  margin: 0;
+  width: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+#editProfilePage #sheetsBox li {
+  margin: 6px 0;
+}
+#editProfilePage #pinnedSheets ul {
+  min-height: 36px;
+}
+#accountSettingsPage .inner{
+  position: relative;
+}
+#accountSettingsPage .toggleOption {
+  font-size: 14px;
+}
+#accountSettingsPage .toggleSet {
+  width: 100%;
+}
+
+.interface-hebrew #accountSettingsPage.static.biReady .toggleOption:first-child{
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-right: 1px solid #999;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}
+.interface-hebrew #accountSettingsPage.static.biReady .toggleOption:last-child{
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+.static .doubleOption .toggleOption {
+  width: 50%;
+}
+.static .tripleOption .toggleOption {
+  width: 33.3%;
+}
+.static .toggleOption {
+  background-color: white;
+  color: #666;
+  outline: none;
+}
+.static .toggleOption.active {
+  color: #666;
+  background-color: #eee;
+}
+#personPage h1 {
+  margin-bottom: 40px;
+}
+#personPage h2 {
+  text-align: center;
+  border-bottom: none;
+  margin-bottom: 40px;
+}
+#personPage p {
+  font-size: 20px;
+  line-height: 1.1em;
+}
+#personPage #bio{
+  color: #666;
+}
+#personPage a,
+#peoplePage a,
+#talmudicPeoplePage a{
+  text-decoration: none;
+}
+#peoplePage .author a, #talmudicPeoplePage .author a, #personPage a{
+  color: #666;
+}
+#peoplePage .author, #talmudicPeoplePage .author{
+  margin-left: 0;
+  font-size: 20px;
+}
+#peoplePage .author {
+  width: 49%;
+  display: inline-block;
+  box-sizing: border-box;
+}
+@media screen and (max-width: 700px) {
+  #peoplePage .author {
+    width: 100%
+  }
+}
+#peoplePage .authors-row{
+  padding-bottom: 5px;
+}
+#peoplePage .authors-row:first-of-type {
+  padding-top: 10px;
+}
+#talmudicPeoplePage .talmudic-generation {
+  width: 49%;
+  display: inline-block;
+  vertical-align: top;
+}
+@media screen and (max-width: 700px) {
+  #talmudicPeoplePage .talmudic-generation {
+    width: 100%
+  }
+}
+#talmudicPeoplePage h4{
+  color: #ccc;
+  padding-bottom: 10px;
+}
+#talmudicPeoplePage p.author{
+  padding-bottom: 5px;
+}
+#talmudicPeoplePage p.author:first-of-type{
+  padding-top: 10px;
+}
+#personPage #periodNameLine, #personPage #yearLine{
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+  font-weight: normal;
+  text-transform: uppercase;
+  color: #aaa;
+  padding-bottom: 15px;
+}
+#personPage #external_links i{
+  padding: 0 5px;
+}
+#personPage #external_links a{
+  padding: 0 5px;
+}
+#personPage div.person_tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 6px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+#activityPage h2 {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+  font-size: 25px;
+  font-style: italic;
+  color: #aaa;
+  text-align: center;
+  border: none;
+  text-transform: none;
+}
+.interface-hebrew #activityPage h2 {
+  font-family: "Heebo", "Helvetica Neue", Helvetica, Ariel, san-serif;
+}
+#activityPage #activityFeed {
+  color: #666;
+}
+#activityPage #activityFeed a {
+  color: #333;
+  font-weight: normal;
+}
+#activityPage #activityFeed #moreActivity {
+  display: block;
+  margin-top: 30px;
+  font-size: 15px;
+}
+#activityPage #activityFeed .topline {
+  font-weight: normal;
+}
+#activityPage #activityFeed .text.ver-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#activityPage #activityFeed .text.ver-he {
+  font-family: "Frank Ruehl Libre", "Times New Roman", serif;
+}
+#activityPage #activityList .time {
+  color: #ccc;
+}
+#activityPage .activityFilterSection{
+  text-align: center;
+  margin: 30px 0;
+  padding-bottom: 30px;
+}
+#activityPage select {
+  min-width: 165px;
+  background-color: #ffffff;
+  height: 3em;
+  padding: 0 15px;
+  letter-spacing: 1px;
+  border-radius: 3px;
+  border-color: #ccc;
+  font-size: 14px;
+}
+#iosPage p {
+  margin-bottom: 30px;
+}
+#iosPage a {
+  text-decoration: underline;
+}
+#connectPage {
+  text-align: center;
+}
+#jobsPage {
+  font-size: 18px
+}
+#jobsPage h1 {
+  margin-bottom: 0;
+}
+#jobsPage h2 {
+  font-size: 22px;
+}
+#jobsPage h2.anchorable {
+  padding-top: 90px;
+  margin-top: 0;
+}
+#jobsPage h3 {
+  font-size: 16px;
+  font-weight: lighter;
+}
+#jobsPage p {
+  margin: 20px 0;
+}
+#jobsPage li {
+  margin: 14px 0;
+}
+#helpPage .section {
+  margin-bottom: 60px;
+}
+#translationRequestsPage .translationRequest{
+  background-color: inherit;
+  text-align: justify;
+  border-bottom: 1px solid #eee;
+  padding: 20px 0 20px 0;
+  margin: 0;
+  display: flex;
+  display: -webkit-flex;
+  justify-content: space-between;
+  -webkit-justify-content:space-between;
+  align-items: center;
+  -webkit-align-items: center;
+}
+#translationRequestsPage .translationRequest > div{
+  all: initial;
+}
+#translationRequestsPage .translationRequest .requestRank,
+#translationRequestsPage .translationRequest .requestText,
+#translationRequestsPage .translationRequest .requestCountBox{
+  display: inline-block;
+  vertical-align: middle;
+}
+#translationRequestsPage .translationRequest span{
+  font-size: 1.3em;
+}
+#translationRequestsPage .translationRequest .requestRank{
+  display: inline-block;
+}
+#translationRequestsPage .translationRequest .requestCountBox{
+  display: inline-block;
+  text-align: right;
+}
+#translationRequestsPage .translationRequest .requestText{
+  display: inline-block;
+  width: 80%
+}
+#translationRequestsPage .translationRequest .requestText > div{
+  display: block;
+}
+.translationRequest .requestRef a {
+  float: none;
+  display: inline;
+  width: 100%;
+  line-height: 5px;
+}
+#translationRequestsPage .translationRequest .requestText .requestCompleter span{
+  font-size: 0.8em;
+}
+#translationRequestsPage .translationRequest .requestFeatured {
+    float: none;
+    cursor: pointer;
+    /*color: #FFCC00;*/
+    font-size: 16px;
+    vertical-align: middle;
+}
+#translationRequestsPage .translationRequest .requestButton {
+    width: 20px;
+    padding: 10px;
+    display: inline;
+    vertical-align: middle;
+}
+#metricsPage .chart {
+  margin-bottom: 80px;
+  border: 1px solid #ddd;
+}
+#metricsPage .chartLabel {
+  text-align: center;
+  display: block;
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-family: "Roboto", "Helvetica Neue", "Helvetica", sans-serif;
+}
+#digitizedBySefaria p {
+  margin-bottom: 20px;
+}
+#digitizedBySefaria #texts {
+  margin-top: 40px;
+  padding: 0;
+}
+#digitizedBySefaria .sub {
+  color: #666;
+  font-size: 13px;
+}
+#digitizedBySefaria ul {
+  list-style-type: none
+}
+#digitizedBySefaria li {
+  margin-bottom: 12px;
+}
+#digitizedBySefaria li a {
+  font-size: 18px;
+}
+.static.legal iframe {
+  width: 100%;
+  height: 600px;
+  border: 1px solid #aaa;
+}
+#legalTabs a {
+  padding: 4px 8px;
+  margin-right: 4px;
+  background-color: #eee;
+  border: 1px solid #aaa;
+  border-bottom: none;
+  font-size: 15px;
+  display: inline-block;
+}
+#legalTabs a.current {
+  background-color: white;
+}
+#edPage {
+  overflow: hidden;
+  color: #333;
+  background-color: transparent;
+}
+#edPage .section {
+  margin-bottom: 0;
+}
+#edPage #edCover {
+  color: white;
+  height: 660px;
+  padding: 225px 0;
+  box-sizing: border-box;
+  text-align: center;
+  overflow: hidden;
+  position: relative;
+  background-image: url(/static/img/edheader.jpg);
+  background-size: cover;
+  background-color: #ADA99B;
+  background-position: center;
+}
+#edPage #edCover h1 {
+  height: 70px;
+  margin-bottom: 20px;
+}
+#edPage #edCover h1.featureTitle .int-en,
+#edPage #edCover h1.featureTitle .int-he {
+  color: white;
+}
+#edPage h1 .int-en, #edPage h2 .int-en{
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#edPage #edCover .sub {
+  color: white;
+  font-size: 18px;
+  margin: 0;
+  position: relative;
+}
+#edPage #edCover .sub .int-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#edPage #edCover a {
+  color: white;
+  font-style: normal;
+  font-size: 21px;
+  position: relative;
+}
+#edPage #edCover .button {
+  margin-top: 80px;
+  padding: 16px 34px;
+  outline: none;
+}
+#edPage .section {
+  overflow: hidden;
+  padding: 100px 0;
+}
+#edPage .sectionInner {
+  width: 750px;
+  max-width: 94%;
+  margin: auto;
+}
+#edPage .section:nth-child(odd) {
+  background-color: #FBFBFA;
+}
+#edPage .section:nth-child(even) {
+  background-color: white;
+}
+#edPage .textBox {
+  display: inline-block;
+  width: 380px;
+}
+#edPage .imageBox {
+  display: inline-block;
+  width: 300px;
+  text-align: center;
+}
+#edPage .imageBox img {
+  max-width: 100%;
+}
+#edPage .imageBox a .button.fullWidth {
+  width: 300px;
+}
+@media screen and (max-width: 700px) {
+  #edPage .sectionInner {
+    width: 350px;
+  }
+  #edPage .textBox, #edPage .imageBox {
+    max-width: 100%;
+    margin: 0 auto;
+    float: none !important;
+  }
+  #edPage .imageBox {
+    margin-top: 20px;
+  }
+}
+#edPage .imageBox.bordered {
+  border: 1px solid #ccc;
+}
+#edPage .imageBox.bordered img {
+  display: block;
+}
+#edPage .textLeft .textBox {
+  float: left;
+}
+#edPage .textLeft .imageBox {
+  float: right;
+}
+#edPage .textRight .textBox {
+  float: right;
+}
+#edPage .textRight .imageBox {
+  float: left;
+}
+#edPage .section a .button {
+  display: block;
+  width: 280px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+#edPage .section.center {
+  text-align: center;
+}
+#edPage .section.center .button {
+  margin-left: auto;
+  margin-right: auto;
+}
+#edPage h1, #edPage h2 {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#edPage h2 {
+  margin: 0 0 12px 0;
+  padding: 0;
+  font-style: italic;
+  font-size: 28px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  text-transform: none;
+  border: none;
+  color: #000;
+}
+#edPage h2 img {
+  top: 2px;
+  position: relative;
+}
+#edPage .description {
+  margin: 26px 0 34px 0;
+  line-height: 1.2;
+}
+#edPage .dedication {
+  margin: -12px 0 34px;
+  color: #999;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.2;
+}
+#edPage .section .button {
+  margin: 0;
+  position: relative;
+}
+#edPage a {
+  color: #999;
+  font-size: 16px;
+}
+#edPage a.refLink {
+  color: #333;
+  font-size: 16px;
+  padding: 12px 0px 15px;
+}
+#edHelp .description {
+  margin: 30px 0 40px;
+}
+#edConnect h2 {
+  margin-bottom: 30px;
+}
+#edConnect #mailingListTitle {
+  margin-bottom: 40px;
+  color: #999;
+  font-size: 14px;
+}
+#edConnect #mailingListEmail {
+  padding: 14px 24px;
+  margin: -4px 8px 0 0;
+  width: 240px;
+  font-size: 16px;
+}
+#edConnect #subscribeMsg {
+  margin-top: 40px;
+  font-size: 20px;
+  display: none;
+}
+
+#groupsPage {
+    margin: 70px auto;
+    text-align: center;
+}
+#groupsPage #groups {
+    margin-top: 40px;
+}
+#groupsPage .group {
+    margin: 10px;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    display: block;
+    text-align: left;
+    overflow: hidden;
+}
+#groupsPage .group:hover {
+    border: 1px solid #08c;
+}
+#groupsPage .groupName {
+    font-size: 18px;
+    line-height: 22px;
+    color: #555;
+    display: block;
+}
+#groupsPage .groupSettings {
+    display: none;
+    cursor: pointer;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 18px;
+    color: black;
+}
+#groupsPage .group img.groupCover {
+}
+#groupsPage .group img.groupHeader {
+    display: none;
+}
+#groupsPage .group img {
+    width: 48px;
+    height: 48px;
+    float: left;
+}
+
+#visualGardenPage .control-results-containe{
+  display: flex;
+  display: -webkit-flex;
+  align-items: flex-start;
+  -webkit-align-items: flex-start;
+}
+#visualGardenPage #results-container .int-he {
+  font-family: "Frank Ruehl Libre","Times New Roman",serif;
+}
+#visualGardenPage .int-en {
+  font-family: "adobe-garamond-pro", Georgia, serif;
+}
+#visualGardenPage h1 {
+  font-size: 36px;
+  border: none;
+  margin: 0;
+}
+#visualGardenPage h2 {
+  text-align: center;
+}
+/* Controls need LTR to present right, hebrew 'reset' block wants RTL on top charts, but not on filter charts */
+#visualGardenPage #controls {
+  width: 320px;
+  float: left;
+  direction: ltr;
+}
+#visualGardenPage #top-controls {
+  display: flex;
+}
+#visualGardenPage #top-filter-control {
+  text-align: center;
+  font-size: 28px;
+}
+#visualGardenPage #data-count {
+  float: none;
+  text-align: center;
+  margin: 0 0 30px 0;
+}
+body.interface-hebrew #visualGardenPage .reset {
+  direction: rtl;
+  float: right;
+}
+body.interface-hebrew #visualGardenPage .filter-title .reset {
+  float: none;
+  direction: ltr;
+}
+#visualGardenPage #sort-label {
+  display: inline-block;
+  vertical-align: top;
+}
+#visualGardenPage #sort-container {
+  display: inline-block;
+}
+#visualGardenPage .top-paging-block {
+  display: inline-block;
+  padding-left: 30px;
+}
+#visualGardenPage .paging-block input {
+  padding: 3px;
+}
+#visualGardenPage .bottom-paging-block {
+  padding-top: 35px;
+  float: right;
+}
+#visualGardenPage #results .result {
+  margin: 10px 0;
+}
+#visualGardenPage #results .result-ref {
+  font-weight: bold;
+}
+#visualGardenPage #results .result-ref i {
+  cursor: pointer;
+  margin: 0 7px;
+}
+#visualGardenPage #results .result-byline {
+  font-size: .8em;
+}
+#visualGardenPage #results .result-text {
+  margin: 0 10px 0;
+}
+#visualGardenPage #results .result-text span {
+  display: block;
+  margin: 5px 0 0;
+}
+#visualGardenPage #results .result-text span.he,
+#visualGardenPage #results .result-text span.int-he {
+   direction: rtl;
+}
+#visualGardenPage #results .result-text span.he {
+ font-family: "Frank Ruehl Libre","Times New Roman",serif;
+}
+#visualGardenPage #results:after { /* Clearfix, for footer */
+	visibility: hidden;
+	display: block;
+	font-size: 0;
+	content: " ";
+	clear: both;
+	height: 0;
+}
+#visualGardenPage #sort-container {
+  float: none;
+  padding: 25px 0 5px;
+}
+#visualGardenPage .filter-title {
+  margin-left: 10px;
+}
+#visualGardenPage .filter-title .filter-title-en {
+  font-weight: bold;
+}
+#visualGardenPage .tags-list.dc-chart g.row text {
+  fill: black;
+}
+#visualGardenPage .tags-list.dc-chart .axis path,
+#visualGardenPage .tags-list.dc-chart .axis line {
+  stroke: none
+}
+#visualGardenPage #results-table .dc-table-column ._0 {
+  width: 220px;
+}
+#visualGardenPage #results-table .dc-table-column._1,
+#visualGardenPage #results-table .dc-table-column._2,
+#visualGardenPage #results-table .dc-table-column._3 {
+  width: 170px;
+}
+#visualGardenPage #results-table .dc-table-column._4 {
+  width: 30px;
+}
+#visualGardenPage #map-chart {
+  margin-left: 10px;
+  margin-bottom: 25px;
+}
+#visualGardenPage #map-chart path {
+  stroke-width: 1;
+  stroke: black;
+}
+#visualGardenPage #map-chart .selected path {
+  stroke-width: 1;
+  stroke: white;
+}
+#visualGardenPage .sourceSheetPanelBox .contentInner {
+  margin: 0 auto;
+}
+#visualGardenPage .sourceSheetPanelBox .textList .texts {
+  padding: 0 5px;
+  overflow-y: hidden;
+}
+#visualGardenPage .sourceSheetPanelBox .textList {
+  position: static;
+}
+#visualGardenPage .sourceSheetPanelBox .sourceSheetSelector {
+  margin: 0;
+}
+#visualGardenPage .sourceSheetBoxTitle i {
+  padding: 0 10px 10px 0;
+  cursor: pointer;
+}
+#dashboardContent {
+  padding-bottom: 100px;
+}
+#dashboardContent #moderatorMsg {
+  text-align: center;
+  font-size: 24px;
+  margin: 30px auto;
+}
+#dashboardContent #moderatorMsg .actions {
+  margin: 30px auto;
+}
+#dashboardContent #dashboard_filter {
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  text-align: left;
+  margin: 10px -12px;
+  font-size: 24px;
+}
+#dashboardContent #dashboard_wrapper input {
+  font-size: 24px;
+  padding: 10px 20px;
+  width: 270px;
+  max-width: 60%;
+}
+#dashboardContent #loggedOutMsg {
+  text-align: center;
+  font-size: 24px;
+  margin: 60px;
+}
+.phone-number{
+  unicode-bidi: plaintext;
+}
+#koschitzky.static {
+  margin-top: 60px;
+}
+.categoryColorLine {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  z-index: 101;
+  background: linear-gradient(90deg, #00505E 0% 10%, #5698B4 10% 20%, #CCB37C 20% 30%, #5B9370 30% 40%, #823241 40% 50%, #5A4474 50% 60%, #AD4F66 60% 70%, #7285A6 70% 80%, #00807E 80% 90%, #4872B3 90% 100%)
+}

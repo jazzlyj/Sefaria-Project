@@ -1,20 +1,28 @@
-{% load sefaria_tags %}
+{% load sefaria_tags static%}
 
-<script src="/static/js/keyboard.js"></script>
+<script src="{% static 'js/lib/keyboard.js' %}"></script>
 <script type="text/javascript">
 {% autoescape off %}
 	var sjs = sjs || {};
 
 	$.extend(sjs, {
-		_email:        "{{ request.user.email|default:'null' }}",
-		_uid:          {{ request.user.id|default:"null" }},
-		books:         {{ titlesJSON|default:"[]" }},
-        booksDict:     {}, // populated below
-		toc:           {{ toc_json|default:"null" }},
-		searchBaseUrl: '{{ SEARCH_URL|default:"http://localhost:9200" }}',
-		searchIndex:   '{{ SEARCH_INDEX_NAME }}',
-		loggedIn:      {% if user.is_authenticated %}true{% else %}false{% endif %},
-		is_moderator:  {% if user.is_staff %}true{% else %}false{% endif %},
+		_email:             "{{ request.user.email|default:'null' }}",
+		_uid:               {{ request.user.id|default:"null" }},
+		books:              {{ titlesJSON|default:"[]" }},
+        booksDict:          {}, // populated below
+        calendar:           {
+                                 parasha: "{{ parasha_ref }}",
+                                 parashaName: "{{ parasha_name }}",
+                                 haftara: "{{ haftara_ref }}",
+                                 daf_yomi: "{{ daf_yomi_ref }}"
+                            },
+		toc:                {{ toc_json|default:"null" }},
+		searchBaseUrl:      '{{ SEARCH_URL|default:"http://localhost:9200" }}',
+		searchIndex:        '{{ SEARCH_INDEX_NAME }}',
+		loggedIn:           {% if user.is_authenticated %}true{% else %}false{% endif %},
+		is_moderator:       {% if user.is_staff %}true{% else %}false{% endif %},
+        notificationCount:  {{ notifications_count|default:'0' }},
+        notifications:      {{ notifications_json|default:'[]' }},
 		help: {
 			videos: {
 				intro:       "TaUB0jd0dzI",
@@ -40,7 +48,7 @@
 					sjs.track.ui("Nav Query");
 				} else {
 					if (sjs.currentPage !== 'search') {
-						window.location="/search?q=" + query.replace(/ /g, "+"); 
+						window.location="/search?q=" + query.replace(/ /g, "+");
 					} else {
                         sjs.search.query = query;
                         sjs.search.clear_available_filters();
@@ -55,7 +63,7 @@
 		searchInsteadOfNav: function (query) {
 			// Displays an option under the search box to search for 'query' rather
 			// than treat it as a navigational query.
-			var html = "<div id='searchInsteadOfNavPrompt'>" + 
+			var html = "<div id='searchInsteadOfNavPrompt'>" +
                             "Search for '<a href='/search?q=" + query + "'>" + query + "</a>' instead." +
 						"</div>";
 			$("#searchInsteadOfNavPrompt").remove();
@@ -147,7 +155,7 @@
                 this._structure = state.structure;
 				if (sjs.current && sjs.current.title && this._path[this._path.length-1] === sjs.current.title) {
 					this._path     = state.path;
-					this._sections = state.sections;					
+					this._sections = state.sections;
 				}
 				if (state.path.length) {
 					$("#navPanelTexts").addClass("expand");
@@ -165,11 +173,11 @@
 			sjs.navPanel._saveState();
 		},
 		_saveState: function() {
-			$.cookie("navPanelState", JSON.stringify({path:         sjs.navPanel._path, 
+			$.cookie("navPanelState", JSON.stringify({path:         sjs.navPanel._path,
 													  sections:     sjs.navPanel._sections,
 													  showPreviews: sjs.navPanel._showPreviews,
                                                       structure:    sjs.navPanel._structure
-													}));			
+													}));
 		},
 		setNavContent: function() {
 			var sections = this._sections;
@@ -266,9 +274,9 @@
 						"<i id='navTocPreviewToggle' class='fa fa-eye' title='Text preview on/off'></i>" +
 						"<div id='navTocLangToggle' class='toggle'>" +
 						"<div class='langToggle toggleOption " + ($("#navToc").hasClass("english") ? "active" : "") + "' data-lang='english'>" +
-							"<img src='/static/img/english.png' /></div>" +
-						"<div class='langToggle toggleOption " + ($("#navToc").hasClass("hebrew") ? "active" : "") + "' data-lang='hebrew'>" + 
-							"<img src='/static/img/hebrew.png' /></div>" +
+							"<img src='{% static 'img/english.png' %}' /></div>" +
+						"<div class='langToggle toggleOption " + ($("#navToc").hasClass("hebrew") ? "active" : "") + "' data-lang='hebrew'>" +
+							"<img src='{% static 'img/hebrew.png' %}' /></div>" +
 						"</div></div>";
 
             // Structure selector
@@ -276,7 +284,9 @@
                 html += "<div id='structureDropdown'>" +
                     "<span id='browseBy'>Browse by </span>" +
                         "<select>" +
-                            "<option value='default' " + ((sjs.navPanel._structure == "default")?"selected ":"") + ">" + hebrewPlural(schema_node.sectionNames.slice(-2)[0]) +"</option>";
+                            "<option value='default' " + ((sjs.navPanel._structure == "default")?"selected ":"") + ">" +
+                                (schema_node.sectionNames ? hebrewPlural(schema_node.sectionNames.slice(-2)[0]) : "Primary Structure") +
+                            "</option>";
                             for(var n in this._preview.alts) {
                                 html += "<option value='" + n + "' " + ((sjs.navPanel._structure == n)?"selected ":"") + ">" + n + "</option>";
                             }
@@ -332,9 +342,9 @@
 								"data-sections='" + sectionPath + "'>" + crumb + "</div>");
 				}
 
-				html += "<div id='tocCatHeaders'>" + 
-								cats.join(" &raquo; ") + 
-								"<div class='clear'></div>" + 
+				html += "<div id='tocCatHeaders'>" +
+								cats.join(" &raquo; ") +
+								"<div class='clear'></div>" +
 							"</div>";
 
 			}
@@ -349,19 +359,19 @@
 
 					if ("title" in node[i]) {
 						// Text
-						html += "<div class='tocCat sparse" + node[i].sparseness + "' " +
+						html += "<div class='tocCat' " +
 									 "data-path='" + catPath + "'" +
-									 "data-sections='" + node[i].title.replace(/\'/g, "&apos;") +"'>" + 
+									 "data-sections='" + node[i].title.replace(/\'/g, "&apos;") +"'>" +
 									 	"<i class='tocCatCaret fa fa-angle-" +
 									 		($("#navToc").hasClass("hebrew") ? "left" : "right") +
 									 	"'></i>" +
-									 	"<a class='textTocLink tooltipster' href='/" + node[i].title.replace(/\'/g, "&apos;") + "' title='Table of Contents'><i class='fa fa-list-ul'></i></a>" +									 	
+									 	"<a class='textTocLink tooltipster' href='/" + node[i].title.replace(/\'/g, "&apos;") + "' title='Table of Contents'><i class='fa fa-list-ul'></i></a>" +
 									 	"<span class='en'>" + node[i].title + "</span>" +
 									 	"<span class='he'>" + node[i].heTitle + "</span>" +
 								"</div>";
 					} else {
 						// Category
-						html += "<div class='tocCat' data-path='" + catPath + "'>" + 
+						html += "<div class='tocCat' data-path='" + catPath + "'>" +
 									"<i class='tocCatCaret fa fa-angle-" +
 										($("#navToc").hasClass("hebrew") ? "left" : "right") +
 									"'></i>" +
@@ -585,19 +595,14 @@
 
 
 		// NavPanel
-		sjs.navPanel.init();
+		if ($("#navPanel").length) {
+            sjs.navPanel.init();
+        }
 
 		// Close menus on outside click
 		$(window).click(function(){
 			$("#navPanel.navPanelOpen").removeClass("navPanelOpen");
 		});
-
-
-		// Show the Search instead of query modal if it's in params
-		var params = getUrlVars();
-		if ("nav_query" in params) {
-			sjs.searchInsteadOfNav(params.nav_query);
-		}
 
 		// Language Toggles
 		sjs.changeContentLang = function() {
@@ -609,15 +614,18 @@
 			$("#languageToggle .toggleOption").removeClass("active");
 			$(this).addClass("active");
 
-			$("body").removeClass("english hebrew bilingual")
-				.addClass(mode);
+			$("body, #content").removeClass("english hebrew bilingual")
+				.addClass(mode)
+                .trigger("languageChange");
 			return false;
 		};
 		$("#hebrew, #english, #bilingual").click(sjs.changeContentLang);
 
 
 		// Default tooltipster
-		$(".tooltipster").tooltipster();
+		if ($().tooltipster) {
+            $(".tooltipster").tooltipster();
+        }
 
 
 	    // Notifications - Mark as read
@@ -634,28 +642,28 @@
 			if (ids.length) {
 				$.post("/api/notifications/read", {notifications: JSON.stringify(ids)}, function(data) {
 					console.log(data)
-				});			
+				});
 			}
 			var unread = parseInt($("#newNotificationsCount").text()) - ids.length;
 			if (unread == 0 ) {
 				$("#newNotificationsCount").hide();
 			}
 			$("#newNotificationsCount").text(unread);
- 			
+
 	    };
 
 	    // Notifications - Load more through scrolling
 	    sjs.notificationsPage = 1;
 	    $('#notifications').bind('scroll', function() {
         	if($(this).scrollTop() + $(this).innerHeight() >= this.scrollHeight) {
-         	   sjs.loadMoreNotifications();
+         	   sjs.loadMoreStories();
         	}
     	});
-    	sjs.loadMoreNotifications = function() {
+    	sjs.loadMoreStories = function() {
     		$.getJSON("/api/notifications?page=" + sjs.notificationsPage, function(data) {
     			if (data.count < data.page_size) {
     				$("#notifications").unbind("scroll");
-    			} 
+    			}
 				$("#notifications").append(data.html);
 				sjs.notificationsPage = data.page + 1;
     			sjs.markNotificationsAsRead();
@@ -688,7 +696,7 @@
 		};
 		sjs.postMessage = function(recipient, message) {
 			if (!message) { return; }
-			var postJSON = JSON.stringify({ 
+			var postJSON = JSON.stringify({
 				recipient: recipient,
 				message: message.escapeHtml()
 			});
@@ -704,7 +712,7 @@
 									"<div id='messageText'>" + message + "</div>" +
 									"<div class='messageReply btn btn-primary' data-recipient='" + sender +"'>Reply</div>" +
 									"<div class='cancel btn'>Close</div>" +
-								"</div>";				
+								"</div>";
 			$(messageHtml).appendTo("body").show()
 				.position({of: window})
 				.draggable({cancel: "#messageText"});
@@ -733,11 +741,11 @@
 			var recipient = parseInt($(this).attr("data-recipient"));
 			var name      = $(this).parent().find("a.userLink")[0].outerHTML;
 			var message   = $(this).parent().find(".messageText").html();
-			sjs.viewMessage(recipient, name, message);			
+			sjs.viewMessage(recipient, name, message);
 		});
 
 
-		// Share Link / Share Modal 
+		// Share Link / Share Modal
 		sjs.showShareModal = function(e){
 			$("#shareModal").show().position({of: window});
 			$("#overlay").show();
@@ -754,7 +762,7 @@
             $("#textPreview").remove();
             sjs.help.close();
 			e.stopPropagation();
-		}; 
+		};
 		$("#overlay").click(sjs.hideModals);
 
 
@@ -778,8 +786,8 @@
                 sjs.track.event("Help", "Video", vid);
             },
             makeVideo: function(vid) {
-            	var url = "http://www.youtube.com/embed/" + 
-            					sjs.help.videos[vid] + 
+            	var url = "http://www.youtube.com/embed/" +
+            					sjs.help.videos[vid] +
             					"?enablejsapi=1&rel=0&autoplay=1";
             	var html = '<iframe id="helpVideo" src="' + url + '" frameborder="0" allowfullscreen></iframe>';
             	$("#helpVideoBox").html(html);
@@ -800,7 +808,7 @@
         sjs.help.init();
 
 
-		// Move Goto box, controls into hidden menu for small screen size 
+		// Move Goto box, controls into hidden menu for small screen size
 		sjs.adjustLayout = function() {
 			// Layout changes for small screen sizes that can't be accomplised
 			// with media-queries only
@@ -808,7 +816,7 @@
 			var $gotoBox  = $("#gotoBox");
 			var $controls = $("#controls");
 
-			// gotoBox into options bar	    	
+			// gotoBox into options bar
 			if (width >= 500 && $gotoBox.parent().attr("id") === "navPanel") {
 				$("#breadcrumbs").before($gotoBox);
                 $(".navLine").first().remove();
@@ -840,6 +848,22 @@
 	    })
 	    $("#rightButtons").click(function(e){e.stopPropagation();});
 	    $(window).click(sjs.hideOptionsBar);
+
+		// browser check --
+		// this attempts to create an element and add css3 text shadow to it to it
+		// these are only supported in recent firefox, chrome, safari & ie > 9
+
+		$("#sefaria").css("text-shadow", "2px 2px #ff0000");
+		var sefariaSupportedBrowser = !!$("#alertMessage").css("text-shadow");
+		$("#sefaria").css("text-shadow", "");
+
+		if (sefariaSupportedBrowser == false) {
+		$("#alertMessage").html('<strong>Warning:</strong> Your browser is out of date and unsupported by Sefaria<br/>Please use a more up to date browser or download one <a href="http://browsehappy.com/" target="_blank">here</a>.').show();
+		}
+
 	});
 {% endautoescape %}
+
+
+
 </script>

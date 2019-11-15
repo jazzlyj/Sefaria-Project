@@ -1,103 +1,122 @@
 
 import hashlib
 import sys
+from functools import wraps
+from django.http import HttpRequest
+
+import logging
+logger = logging.getLogger(__name__)
+
+try:
+    from sefaria.settings import USE_VARNISH
+except ImportError:
+    USE_VARNISH = False
 
 if not hasattr(sys, '_doc_build'):
     from django.core.cache import cache
-
-# Simple caches for indices, parsed refs, table of contents and texts list
-index_cache = {}
+    from django.core.cache import caches
 
 
-def get_index(bookname):
-    res = index_cache.get(bookname)
-    if res:
-        return res
-    return None
+#functions from here: http://james.lin.net.nz/2011/09/08/python-decorator-caching-your-functions/
+#and here: https://github.com/rchrd2/django-cache-decorator
+
+# New cache instance reconnect-apparently
 
 
-def set_index(bookname, instance):
-    index_cache[bookname] = instance
+def get_cache_factory(cache_type):
+    if cache_type is None:
+        cache_type = 'default'
+
+    return caches[cache_type]
 
 
-def reset_texts_cache():
+#get the cache key for storage
+def cache_get_key(*args, **kwargs):
+    serialise = []
+    for arg in args:
+        serialise.append(str(arg))
+    for key,arg in sorted(kwargs.items(), key=lambda x: x[0]):
+        serialise.append(str(key))
+        serialise.append(str(arg))
+    key = hashlib.md5("".join(serialise)).hexdigest()
+    return key
+
+
+def django_cache(action="get", timeout=None, cache_key='', cache_prefix = None, default_on_miss = False, default_on_miss_value=None, cache_type=None):
     """
-    Resets caches that only update when text index information changes.
+    Easily add caching to a function in django
     """
-    import sefaria.model as model
-    global index_cache
-    index_cache = {}
-    keys = [
-        'toc_cache',
-        'toc_json_cache',
-        'texts_titles_json',
-        'texts_titles_json_he',
-        'all_titles_regex_en',
-        'all_titles_regex_he',
-        'all_titles_regex_en_commentary',
-        'all_titles_regex_he_commentary',
-        'all_titles_regex_en_terms',
-        'all_titles_regex_he_terms',
-        'all_titles_regex_en_commentary_terms',
-        'all_titles_regex_he_commentary_terms',
-        'full_title_list_en',
-        'full_title_list_he',
-        'full_title_list_en_commentary',
-        'full_title_list_he_commentary',
-        'full_title_list_en_commentators',
-        'full_title_list_he_commentators',
-        'full_title_list_en_commentators_commentary',
-        'full_title_list_he_commentators_commentary',
-        'full_title_list_en_terms',
-        'full_title_list_he_terms',
-        'full_title_list_en_commentary_terms',
-        'full_title_list_he_commentary_terms',
-        'full_title_list_en_commentators_terms',
-        'full_title_list_he_commentators_terms',
-        'full_title_list_en_commentators_commentary_terms',
-        'full_title_list_he_commentators_commentary_terms',
-        'title_node_dict_en',
-        'title_node_dict_he',
-        'title_node_dict_en_commentary',
-        'title_node_dict_he_commentary',
-        'term_dict_en',
-        'term_dict_he'
-    ]
-    for key in keys:
-        delete_cache_elem(key)
+    if not cache_key:
+        cache_key = None
 
-    delete_template_cache('texts_list')
-    delete_template_cache('leaderboards')
-    model.Ref.clear_cache()
-    model.library.local_cache = {}
+    def decorator(fn):
+        fn.func_dict["django_cache"] = True
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            #logger.debug([args, kwargs])
+
+            # Inner scope variables are read-only so we set a new var
+            _cache_key = cache_key
+            do_actual_func = False
+
+            if not _cache_key:
+                cachekey_args = args[:]
+                if len(cachekey_args) and isinstance(cachekey_args[0], HttpRequest): # we dont want a HttpRequest to form part of the cache key, it wont be replicatable.
+                    cachekey_args = cachekey_args[1:]
+                _cache_key = cache_get_key(cache_prefix if cache_prefix else fn.__name__, *cachekey_args, **kwargs)
+
+            if action in ["reset", "set"]:
+                do_actual_func = True
+                """try:
+                    delete_cache_elem(_cache_key, cache_type=cache_type)
+                except:
+                    pass"""
+                result = None
+            else:
+                #logger.debug(['_cach_key.......',_cache_key])
+                result = get_cache_elem(_cache_key, cache_type=cache_type)
+
+            if not result:
+                if default_on_miss is False or do_actual_func:
+                    result = fn(*args, **kwargs)
+                    set_cache_elem(_cache_key, result, timeout=timeout, cache_type=cache_type)
+                else:
+                    result = default_on_miss_value
+                    logger.critical("No cached data was found for {}".format(fn.__name__))
+
+            return result
+        return wrapper
+    return decorator
+#-------------------------------------------------------------#
 
 
-def process_index_change_in_cache(indx, **kwargs):
-    reset_texts_cache()
+def get_cache_elem(key, cache_type=None):
+    cache_instance = get_cache_factory(cache_type)
+    return cache_instance.get(key)
 
 
-def process_new_commentary_version_in_cache(ver, **kwargs):
-    if " on " in ver.title:
-        reset_texts_cache()
-
-def get_cache_elem(key):
-    return cache.get(key)
+def set_cache_elem(key, value, timeout = None, cache_type=None):
+    cache_instance = get_cache_factory(cache_type)
+    return cache_instance.set(key, value, timeout)
 
 
-def set_cache_elem(key, value, duration = 600000):
-    return cache.set(key, value, duration)
-
-
-def delete_cache_elem(key):
-    return cache.delete(key)
+def delete_cache_elem(key, cache_type=None):
+    cache_instance = get_cache_factory(cache_type)
+    if isinstance(key, (list, tuple)):
+        try:
+            return cache_instance.delete_many(key)
+        except (AttributeError, NameError, TypeError):
+            retval = False
+            for k in key:
+                retval = retval or cache_instance.delete(k)
+            return retval
+    return cache_instance.delete(key)
 
 
 def get_template_cache(fragment_name='', *args):
     cache_key = 'template.cache.%s.%s' % (fragment_name, hashlib.md5(u':'.join([arg for arg in args])).hexdigest())
-    print cache_key
     return get_cache_elem(cache_key)
 
 
 def delete_template_cache(fragment_name='', *args):
     delete_cache_elem('template.cache.%s.%s' % (fragment_name, hashlib.md5(u':'.join([arg for arg in args])).hexdigest()))
-

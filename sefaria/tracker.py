@@ -7,8 +7,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 import sefaria.model as model
-from sefaria.utils.users import is_user_staff
 from sefaria.system.exceptions import InputError
+try:
+    from sefaria.settings import USE_VARNISH
+except ImportError:
+    USE_VARNISH = False
+if USE_VARNISH:
+    from sefaria.system.varnish.wrapper import invalidate_ref, invalidate_linked
 
 
 def modify_text(user, oref, vtitle, lang, text, vsource=None, **kwargs):
@@ -23,7 +28,7 @@ def modify_text(user, oref, vtitle, lang, text, vsource=None, **kwargs):
     :return:
     """
     chunk = model.TextChunk(oref, lang, vtitle)
-    if getattr(chunk.version(), "status", "") == "locked" and not is_user_staff(user):
+    if getattr(chunk.version(), "status", "") == "locked" and not model.user_profile.is_user_staff(user):
         raise InputError("This text has been locked against further edits.")
     action = kwargs.get("type") or "edit" if chunk.text else "add"
     old_text = chunk.text
@@ -31,14 +36,24 @@ def modify_text(user, oref, vtitle, lang, text, vsource=None, **kwargs):
     if vsource:
         chunk.versionSource = vsource  # todo: log this change
     if chunk.save():
-        model.log_text(user, action, oref, lang, vtitle, old_text, text, **kwargs)
+        model.log_text(user, action, oref, lang, vtitle, old_text, chunk.text, **kwargs)
+        if USE_VARNISH:
+            invalidate_ref(oref, lang=lang, version=vtitle, purge=True)
+            if oref.next_section_ref():
+                invalidate_ref(oref.next_section_ref(), lang=lang, version=vtitle, purge=True)
+            if oref.prev_section_ref():
+                invalidate_ref(oref.prev_section_ref(), lang=lang, version=vtitle, purge=True)
         if not kwargs.get("skip_links", None):
-            from sefaria.helper.link import add_commentary_links, add_links_from_text
-            # Commentaries generate links to their base text automatically
-            if oref.type == "Commentary":
-                add_commentary_links(oref, user, **kwargs)
+            from sefaria.helper.link import add_links_from_text
+            # Some commentaries can generate links to their base text automatically
+            linker = oref.autolinker(user=user)
+            if linker:
+                linker.refresh_links(**kwargs)
             # scan text for links to auto add
-            add_links_from_text(oref.normal(), lang, chunk.text, chunk.full_version._id, user, **kwargs)
+            add_links_from_text(oref, lang, chunk.text, chunk.full_version._id, user, **kwargs)
+
+            if USE_VARNISH:
+                invalidate_linked(oref)
 
     return chunk
 
@@ -46,8 +61,8 @@ def modify_text(user, oref, vtitle, lang, text, vsource=None, **kwargs):
 def add(user, klass, attrs, **kwargs):
     """
     Creates a new instance, saves it, and records the history
-    :param klass: The class we are instanciating
-    :param attrs: Dictionary with the attributes of the class that we are instanciating
+    :param klass: The class we are instantiating
+    :param attrs: Dictionary with the attributes of the class that we are instantiating
     :param user:  Integer user id
     :return:
     """
@@ -62,7 +77,7 @@ def add(user, klass, attrs, **kwargs):
             obj = klass().load({klass.criteria_field: attrs[klass.criteria_field]})
     if obj:
         old_dict = obj.contents(**kwargs)
-        obj.load_from_dict(attrs).save()
+        obj.load_from_dict(attrs).save() if klass != model.Index else obj.update_from_dict(attrs).save()
         model.log_update(user, klass, old_dict, obj.contents(**kwargs), **kwargs)
         return obj
     obj = klass(attrs).save()
@@ -86,7 +101,21 @@ def update(user, klass, attrs, **kwargs):
 
 
 def delete(user, klass, _id, **kwargs):
+    """
+    :param user:
+    :param klass:
+    :param _id:
+    :param kwargs:
+        "callback" - an optional function that will be run on the object before it's deleted
+        All other kwargs are passed to obj.contents()
+    :return:
+    """
     obj = klass().load_by_id(_id)
+    if obj is None:
+        return {'error': 'item with id: {} not found'.format(_id)}
+    if kwargs.get("callback"):
+        kwargs.get("callback")(obj)
+        del kwargs["callback"]
     old_dict = obj.contents(**kwargs)
     obj.delete()
     model.log_delete(user, klass, old_dict, **kwargs)

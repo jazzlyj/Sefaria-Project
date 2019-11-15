@@ -6,6 +6,7 @@ from sefaria.system.database import db
 import sefaria.model as model
 import sefaria.model.abstract as abstract
 
+# cascade functions are tested in person_test.py
 
 def setup_module(module):
     global record_classes
@@ -28,9 +29,12 @@ class Test_Mongo_Record_Models(object):
             assert len(sub.required_attrs)
             assert "_id" not in sub.required_attrs
 
+
     def test_instanciation_load_and_validity(self):
         for sub in record_classes:
             m = sub()
+            if m.collection == "term": #remove this line once terms are normalized
+                continue
             res = m.load({})
             if not res:  # Collection may be empty
                 return
@@ -74,6 +78,7 @@ class Test_Mongo_Record_Methods(object):
             "type": "note",
             "public": True
         }
+        model.Note(attrs).save() # added to make sure there is a note in the db, if the table is truncated or not extant.
         n1 = model.Note(attrs)
         n2 = model.Note(attrs)
         n3 = model.Note()
@@ -100,11 +105,11 @@ class Test_Mongo_Record_Methods(object):
             "public": True,
             "foobar": "blaz"  # should raise an exception when loaded
         }
-        db.notes.remove({"ref": "Psalms 150:1", "owner": 28})
-        db.notes.save(attrs)
+        db.notes.delete_one({"ref": "Psalms 150:1", "owner": 28})
+        db.notes.insert_one(attrs)
         with pytest.raises(Exception):
             model.Note().load({"ref": "Psalms 150:1", "owner": 28})
-        db.notes.remove({"ref": "Psalms 150:1", "owner": 28})
+        db.notes.delete_one({"ref": "Psalms 150:1", "owner": 28})
 
     def test_copy(self):
         for sub in record_classes:

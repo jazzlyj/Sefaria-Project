@@ -6,6 +6,7 @@ abstract.py - abstract classes for Sefaria models
 import collections
 import logging
 import copy
+import bleach
 
 #Should we import "from abc import ABCMeta, abstractmethod" and make these explicity abstract?
 #
@@ -26,15 +27,16 @@ class AbstractMongoRecord(object):
     "collection" attribute is set on subclass
     """
     collection = None  # name of MongoDB collection
-    id_field = "_id" # Mongo ID field
+    id_field = "_id"  # Mongo ID field
     criteria_field = "_id"  # Primary ID used to find existing records
-    criteria_override_field = None # If a record type uses a different primary key (such as 'title' for Index records), and the presence of an override field in a save indicates that the primary attribute is changing ("oldTitle" in Index records) then this class attribute has that override field name used.
+    criteria_override_field = None  # If a record type uses a different primary key (such as 'title' for Index records), and the presence of an override field in a save indicates that the primary attribute is changing ("oldTitle" in Index records) then this class attribute has that override field name used.
     required_attrs = []  # list of names of required attributes
     optional_attrs = []  # list of names of optional attributes
     track_pkeys = False
     pkeys = []   # list of fields that others may depend on
     history_noun = None  # Label for history records
-    second_save = False  # Does this object need a two stage save?  Uses _prepare_second_save()
+    ALLOWED_TAGS = bleach.ALLOWED_TAGS + ["p", "br"]  # not sure why p/br isn't included. dont see any security risks
+    ALLOWED_ATTRS = bleach.ALLOWED_ATTRIBUTES
 
     def __init__(self, attrs=None):
         if attrs is None:
@@ -42,10 +44,10 @@ class AbstractMongoRecord(object):
         self._init_defaults()
         self.pkeys_orig_values = {}
         self.load_from_dict(attrs, True)
-
+            
     def load_by_id(self, _id=None):
         if _id is None:
-            raise Exception(type(self).__name__ + ".load() expects an _id as an arguemnt. None provided.")
+            raise Exception(type(self).__name__ + ".load() expects an _id as an argument. None provided.")
 
         if isinstance(_id, basestring):
             # allow _id as either string or ObjectId
@@ -69,7 +71,6 @@ class AbstractMongoRecord(object):
         attrs = self._saveable_attrs()
         del attrs[self.id_field]
         return self.__class__(copy.deepcopy(attrs))
-
 
     def load_from_dict(self, d, is_init=False):
         """
@@ -98,16 +99,18 @@ class AbstractMongoRecord(object):
         self.load_from_dict(attrs)
         return self.save()
 
-    def save(self):
+    def save(self, override_dependencies=False):
         """
         Save the object to the Mongo data store.
         On completion, will emit a 'save' notification.  If a tracked attribute has changed, will emit an 'attributeChange' notification.
+        if override_dependencies is set to True, no notifcations will be emitted.
         :return: the object
         """
         is_new_obj = self.is_new()
 
         self._normalize()
         self._validate()
+        self._sanitize()
         self._pre_save()
 
         props = self._saveable_attrs()
@@ -116,55 +119,54 @@ class AbstractMongoRecord(object):
             if not (len(self.pkeys_orig_values) == len(self.pkeys)):
                 raise Exception("Aborted unsafe {} save. {} not fully tracked.".format(type(self).__name__, self.pkeys))
 
-        _id = getattr(db, self.collection).save(props, w=1)
-
         if is_new_obj:
-            self._id = _id
+            result = getattr(db, self.collection).insert_one(props)
+            self._id = result.inserted_id
+        else:
+            result = getattr(db, self.collection).replace_one({"_id":self._id}, props, upsert=True)
+            if not result.matched_count and result.upserted_id:
+                raise Exception("{} inserted when expecting an update.".format(type(self).__name__))
 
-        if self.second_save:
-            self._prepare_second_save()
-            getattr(db, self.collection).save(props, w=1)
-
-        # Not sure about the order of these notifications firing.
-        if self.track_pkeys and not is_new_obj:
+        if self.track_pkeys and not is_new_obj and not override_dependencies:
             for key, old_value in self.pkeys_orig_values.items():
-                if old_value != getattr(self, key):
+                if old_value != getattr(self, key, None):
                     notify(self, "attributeChange", attr=key, old=old_value, new=getattr(self, key))
 
-        ''' Not yet used
-        self._post_save()
-        '''
+        if not override_dependencies:
+            notify(self, "save", orig_vals=self.pkeys_orig_values, is_new=is_new_obj)
 
-        notify(self, "save", orig_vals=self.pkeys_orig_values)
-        if is_new_obj:
-            notify(self, "create")
-
-        #Set new values as pkey_orig_values so that future changes will be caught
+        # Set new values as pkey_orig_values so that future changes will be caught
         if self.track_pkeys:
             for pkey in self.pkeys:
                 self.pkeys_orig_values[pkey] = getattr(self, pkey, None)
 
         return self
 
-    def delete(self):
+    def can_delete(self):
+        """
+        This method can raise an error or output a reason for the failure to delete.
+        :return:
+        """
+        return True
+
+    def delete(self, force=False):
+        if not self.can_delete():
+            if force:
+                logger.error(u"Forcing delete of {}.".format(str(self)))
+            else:
+                logger.error(u"Failed to delete {}.".format(str(self)))
+                return
+
         if self.is_new():
-            raise InputError("Can not delete {} that doesn't exist in database.".format(type(self).__name__))
+            raise InputError(u"Can not delete {} that doesn't exist in database.".format(type(self).__name__))
 
-        #if self.track_pkeys:
-        #    for pkey in self.pkeys:
-        #        self.pkeys_orig_values[pkey] = getattr(self, pkey)
-
-        getattr(db, self.collection).remove({"_id": self._id})
         notify(self, "delete")
+        getattr(db, self.collection).delete_one({"_id": self._id})
 
-        #if self.track_pkeys:
-        #    for key, old_value in self.pkeys_orig_values.items():
-        #        notify(self, "attributeChange", attr=key, old=old_value, new=None)
-
-    def delete_by_query(self, query):
+    def delete_by_query(self, query, force=False):
         r = self.load(query)
         if r:
-            r.delete()
+            r.delete(force=force)
 
     def is_new(self):
         return getattr(self, "_id", None) is None
@@ -181,13 +183,24 @@ class AbstractMongoRecord(object):
         :return: dict
         """
         d = self._saveable_attrs()
-        del d[self.id_field]
+        try:
+            del d[self.id_field]
+        except KeyError:
+            pass
+        if kwargs.get("with_string_id", False) and hasattr(self, "_id"):
+            d["_id"] = str(self._id)
         return d
 
     def _set_pkeys(self):
         if self.track_pkeys:
             for pkey in self.pkeys:
                 self.pkeys_orig_values[pkey] = getattr(self, pkey, None)
+
+    def is_key_changed(self, key):
+        assert self.track_pkeys and key in self.pkeys, "Failed to track key {} in {}".format(key, self.__class__.__name__)
+        if self.is_new():
+            return bool(getattr(self, key, False))
+        return self.pkeys_orig_values[key] != getattr(self, key, None)
 
     def _init_defaults(self):
         pass
@@ -227,16 +240,18 @@ class AbstractMongoRecord(object):
     def _normalize(self):
         pass
 
-    def _prepare_second_save(self):
-        pass
-
     def _pre_save(self):
         pass
 
-    ''' Not yet used.
-    def _post_save(self, *args, **kwargs):
-        pass
-    '''
+    def _sanitize(self):
+        """
+        bleach all input to protect against security risks
+        """
+        all_attrs = self.required_attrs + self.optional_attrs
+        for attr in all_attrs:
+            val = getattr(self, attr, None)
+            if isinstance(val, basestring):
+                setattr(self, attr, bleach.clean(val, tags=self.ALLOWED_TAGS, attributes=self.ALLOWED_ATTRS))
 
     def same_record(self, other):
         if getattr(self, "_id", None) and getattr(other, "_id", None):
@@ -261,9 +276,15 @@ class AbstractMongoSet(collections.Iterable):
     """
     recordClass = AbstractMongoRecord
 
-    def __init__(self, query={}, page=0, limit=0, sort=[["_id", 1]], proj=None):
-        self.raw_records = getattr(db, self.recordClass.collection).find(query, proj).sort(sort).skip(page * limit).limit(limit)
-        self.has_more = limit != 0 and self.raw_records.count() == limit
+    def __init__(self, query=None, page=0, limit=0, sort=[("_id", 1)], proj=None, hint=None):
+        self.query = query or {}
+        self.raw_records = getattr(db, self.recordClass.collection).find(self.query, proj).sort(sort).skip(page * limit).limit(limit)
+        self.hint = hint
+        self.limit = limit
+        self.skip = page * limit
+        if hint:
+            self.raw_records.hint(hint)
+        #self.has_more = limit != 0 and self.raw_records.count() == limit
         self.records = None
         self.current = 0
         self.max = None
@@ -285,10 +306,9 @@ class AbstractMongoSet(collections.Iterable):
             self.max = len(self.records)
 
     def __len__(self):
-        if self.max:
-            return self.max
-        else:
-            return self.raw_records.count()
+        if not self.max:
+            self._read_records()
+        return self.max
 
     def array(self):
         self._read_records()
@@ -298,19 +318,32 @@ class AbstractMongoSet(collections.Iterable):
         return self.raw_records.distinct(field)
 
     def count(self):
-        return len(self)
+        if self.max:
+            return self.max
+        else:
+            kwargs = {k: getattr(self, k) for k in ["skip", "limit", "hint"] if getattr(self, k, None)}
+            return getattr(db, self.recordClass.collection).count_documents(self.query, **kwargs)
 
     def update(self, attrs):
         for rec in self:
             rec.load_from_dict(attrs).save()
 
-    def delete(self):
+    def delete(self, force=False):
         for rec in self:
-            rec.delete()
+            rec.delete(force=force)
 
     def save(self):
         for rec in self:
             rec.save()
+
+    def remove(self, condition_callback):
+        self._read_records()
+        self.records = [r for r in self.records if not condition_callback(r)]
+        self.max = len(self.records)
+        return self
+
+    def contents(self, **kwargs):
+        return [r.contents(**kwargs) for r in self]
 
 
 def get_subclasses(c):
@@ -411,13 +444,13 @@ def notify(inst, action, **kwargs):
     """
 
     actions_reqs = {
-        "attributeChange": ["attr", "old", "new"],
+        "attributeChange": ["attr"],
         "save": [],
         "delete": [],
         "create": []
     }
     assert inst
-    assert action in actions_reqs.keys()
+    assert action in actions_reqs
 
     for arg in actions_reqs[action]:
         if not kwargs.get(arg, None):
@@ -429,6 +462,9 @@ def notify(inst, action, **kwargs):
     else:
         logger.debug(u"Notify: " + unicode(inst) + u" is being " + action + u"d.")
         callbacks = deps.get((type(inst), action, None), [])
+
+    if not callbacks:
+        return
 
     for callback in callbacks:
         logger.debug(u"Notify: Calling " + callback.__name__ + u"() for " + inst.__class__.__name__ + " " + action)
@@ -447,6 +483,63 @@ def cascade(set_class, attr):
     See examples in dependencies.py
     :param set_class: The set class of the impacted model
     :param attr: The name of the impacted class attribute (fk) that holds the references to the changed attribute (pk)
+        There is support for nested attributes one level deep, e.g. "contents.value"
     :return: a function that will update 'attr' in 'set_class' and can be passed to subscribe()
     """
-    return lambda obj, kwargs: set_class({attr: kwargs["old"]}).update({attr: kwargs["new"]})
+    attrs = attr.split(".")
+    if len(attrs) == 1:
+        return lambda obj, **kwargs: set_class({attr: kwargs["old"]}).update({attr: kwargs["new"]})
+    elif len(attrs) == 2:
+        def foo(obj, **kwargs):
+            for rec in set_class({attr: kwargs["old"]}):
+                new_dict = {k: (v if k != attrs[1] else kwargs["new"]) for k, v in getattr(rec, attrs[0]).items()}
+                setattr(rec, attrs[0], new_dict)
+                rec.save()
+        return foo
+    else:
+        raise InputError("cascade does not support attributes deeper than two levels")
+
+
+def cascade_to_list(set_class, attr):
+    """
+    Handles generic value cascading, for keys in attributes that hold lists of keys.
+    See examples in dependencies.py
+    :param set_class: The set class of the impacted model
+    :param attr: The name of the impacted class attribute (fk) that holds the list of references to the changed attribute (pk)
+    :return: a function that will update 'attr' in 'set_class' and can be passed to subscribe()
+    """
+    def foo(obj, **kwargs):
+        for rec in set_class({attr: kwargs["old"]}):
+            setattr(rec, attr, [kwargs["new"] if e == kwargs["old"] else e for e in getattr(rec, attr)])
+            rec.save()
+
+    return foo
+
+
+def cascade_delete(set_class, fk_attr, pk_attr):
+    """
+    Handles generic delete cascading, for simple key reference changes.
+    See examples in dependencies.py
+    :param set_class: The set class of the impacted model
+    :param fk_attr: The name of the impacted class attribute (fk) that holds the references to the primary identifier (pk)
+            There is support for nested attributes of arbitrary depth - e.g. "contents.subcontents.value"
+    :return: a function that will delete values of 'set_class' where 'attr' matches
+    """
+    return lambda obj, **kwargs: set_class({fk_attr: getattr(obj, pk_attr)}).delete()
+
+
+def cascade_delete_to_list(set_class, fk_attr, pk_attr):
+    """
+    Handles generic delete cascading, for keys in attributes that hold lists of keys.
+    See examples in dependencies.py
+    :param set_class: The set class of the impacted model
+    :param fk_attr: The name of the impacted class attribute (fk) that holds the list of references to the primary identifier (pk)
+    :param pk_attr:
+    :return: a function that will update 'attr' in 'set_class' and can be passed to subscribe()
+    """
+    def foo(obj, **kwargs):
+        for rec in set_class({fk_attr: getattr(obj, pk_attr)}):
+            setattr(rec, fk_attr, [e for e in getattr(rec, fk_attr) if e != getattr(obj, pk_attr)])
+            rec.save()
+
+    return foo
